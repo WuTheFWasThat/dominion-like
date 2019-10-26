@@ -1,0 +1,8 @@
+{
+  "short_name": "Pay the Piper",
+  "name": "Pay the Piper",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
