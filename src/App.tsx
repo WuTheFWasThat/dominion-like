@@ -80,6 +80,16 @@ class App extends React.Component<AppProps, AppState> {
             );
           })}
         </div>
+
+        <br/>
+
+        <div onClick={() => {
+          this.props.choice_cb({
+            type: 'undo',
+          } as game.UndoChoice);
+        }}>
+          Undo
+        </div>
       </div>
     );
   }

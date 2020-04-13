@@ -37,6 +37,7 @@ export type GameState = Immutable.Record<{
   situations: Immutable.List<Effect>,
   extra: any,
   random: random.Engine,
+  previous: null | GameState,
 }>;
 
 export const Copper: Card = {
@@ -61,7 +62,7 @@ export const Estate: Card = {
 export const InitialState = Immutable.Record({
   ended: false,
   turn: 0,
-  actions: 1,
+  actions: 0,
   money: 0,
   victory: 0,
   deck: Immutable.List([Copper, Copper, Copper, Copper, Copper, Copper, Copper, Estate, Estate, Estate]),
@@ -72,6 +73,7 @@ export const InitialState = Immutable.Record({
   draw_per_turn: 5,
   extra: {},
   random: null as any,
+  previous: null,
 });
 
 export function initial_state(seed: number | null): GameState {
@@ -100,11 +102,17 @@ export function draw(state: GameState): GameState {
   return state;
 }
 
-/* TODO
-export type MetaChoice = {
+export interface NoChoice extends PlayerChoice {
+  type: 'no'
+};
+
+export interface UndoChoice extends PlayerChoice {
   type: 'undo'
 };
-*/
+function isUndo(choice: PlayerChoice): choice is UndoChoice {
+    return choice.type === 'undo';
+}
+
 const PlayQuestion: PlayerQuestion = {
   type: 'play'
 };
@@ -115,6 +123,7 @@ export interface PlayChoice extends PlayerChoice {
 function isPlay(choice: PlayerChoice): choice is PlayChoice {
     return choice.type === 'play';
 }
+
 export interface EndTurn extends PlayerChoice {
   type: 'endturn';
 }
@@ -139,28 +148,55 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
 
   await player.next(null as any);  // TODO: hmm
   while (!state.get('ended')) {
-    for (let i = 0; i < state.get('draw_per_turn'); i++) {
-      state = draw(state);
+    let new_turn = false;
+    let prevstate = state;
+
+    let question = PlayQuestion;
+    let choice: PlayerChoice;
+    if (state.get('actions') === 0) {
+      new_turn = true;
+      choice = {type: 'nochoice'};
+    } else {
+      choice = (await player.next([state, question])).value;
     }
-    while (state.get('actions') > 0) {
-      let question = PlayQuestion;
-      const choice: PlayerChoice = (await player.next([state, question])).value;
-      if (isEndTurn(choice)) {
-        break;
-      } else if (isPlay(choice)) {
-        let play: PlayChoice = (choice as PlayChoice);
-        let card = state.get('hand').get(play.index);
-        if (card === undefined) {
-          throw Error('Bad card')
-        }
-        state = await applyEffect(state, card.fn, player);
-        state = state.set('hand', state.get('hand').delete(play.index));
-        state = state.set('discard', state.get('discard').push(card));
+
+    if (isEndTurn(choice)) {
+      new_turn = true;
+      state = state.set('previous', prevstate);
+    }
+    if (new_turn) {
+      for (let i = 0; i < state.get('draw_per_turn'); i++) {
+        state = draw(state);
       }
-      state = state.set('actions', state.get('actions') - 1);
+      state = state.set('turn', state.get('turn') + 1);
+      state = state.set('actions', 1);
+      continue;
     }
-    state = state.set('turn', state.get('turn') + 1);
-    state = state.set('actions', 1);
+
+    if (isUndo(choice)) {
+      let undostate = state.get('previous');
+      if (undostate === null) {
+        throw Error('Cannot undo')
+      } else {
+        state = undostate;
+        continue;
+      }
+    }
+
+    if (isPlay(choice)) {
+      let play: PlayChoice = (choice as PlayChoice);
+      let card = state.get('hand').get(play.index);
+      if (card === undefined) {
+        throw Error('Bad card')
+      }
+      state = await applyEffect(state, card.fn, player);
+      state = state.set('hand', state.get('hand').delete(play.index));
+      state = state.set('discard', state.get('discard').push(card));
+    } else {
+      throw Error('Unexpected choice ' + choice)
+    }
+    state = state.set('actions', state.get('actions') - 1);
+    state = state.set('previous', prevstate);
   }
   state = state.set('ended', true);
   await player.next([state, null]); // to let them render final state
