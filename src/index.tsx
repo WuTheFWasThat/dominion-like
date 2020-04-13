@@ -7,7 +7,6 @@ import { parse_query_string } from './Utils';
 
 async function render() {
   const query_dict = parse_query_string();
-  let state = game.initial_state(parseInt(query_dict.seed || '0'));
 
   // if (process.env.NODE_ENV === 'development') {
   // const response = await fetch('/call', {
@@ -22,24 +21,34 @@ async function render() {
 
   // if (process.env.NODE_ENV === 'development') {
 
-  async function fetch_and_rerender(state: game.GameState) {
+  function fetch_and_rerender(state: game.GameState, question: game.PlayerQuestion | null): Promise<game.PlayerChoice> {
     // const data = await fetch_data(pattern_infos);
-    ReactDOM.render(
-      React.createElement(App, {
-        state: state,
-      }),
-      document.getElementById('main')
-    );
+    return new Promise((resolve, reject) => {
+      let choice_cb = function(choice: game.PlayerChoice) {
+        resolve(choice);
+      }
+      ReactDOM.render(
+        React.createElement(App, {
+          state: state,
+          question: question,
+          choice_cb: choice_cb,
+        }),
+        document.getElementById('main')
+      );
+    });
   }
 
-  let history = [state];
-  while (!state.get('ended')) {
-    for (let i = 0; i < state.get('draw_per_turn'); i++) {
-      state = game.draw(state);
+  const makeUIPlayer: () => game.Player = async function*() {
+    let [state, question] = yield (null as unknown as game.PlayerChoice); // first "choice" is unused
+    while (true) {
+      let choice: game.PlayerChoice = await fetch_and_rerender(state, question);
+      [state, question] = yield choice;
     }
-    await fetch_and_rerender(state);
-    break
   }
+
+  let state = game.initial_state(parseInt(query_dict.seed || '0'));
+  const UIPlayer = makeUIPlayer();
+  game.run(state, UIPlayer);
 }
 
 render();
