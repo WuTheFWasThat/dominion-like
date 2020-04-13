@@ -10,17 +10,12 @@ export type PlayerChoice = {
 };
 export type Player = AsyncGenerator<PlayerChoice, PlayerChoice, [GameState, PlayerQuestion | null]>;
 
-export type EffectFn = (state: GameState) => Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
-export type Effect = {
-  name: string,
-  priority: number,
-  fn: EffectFn,
-};
+export type Effect = (state: GameState) => Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
 
 export type Card = {
   name: string,
   description: string,
-  fn: EffectFn,
+  fn: Effect,
 }
 
 export type GameState = Immutable.Record<{
@@ -34,7 +29,7 @@ export type GameState = Immutable.Record<{
   discard: Immutable.List<Card>,
   hand: Immutable.List<Card>,
   trash: Immutable.List<Card>,
-  situations: Immutable.List<Effect>,
+  situations: Immutable.List<Card>,
   extra: any,
   random: random.Engine,
   previous: null | GameState,
@@ -102,6 +97,16 @@ export function draw(state: GameState): GameState {
   return state;
 }
 
+export function discard(state: GameState, index: number): GameState {
+  const card = state.get('hand').get(index);
+  if (card === undefined) {
+    throw Error(`Unable to discard? ${state.get('hand').size} ${index}`)
+  }
+  state = state.set('hand', state.get('hand').delete(index));
+  state = state.set('discard', state.get('discard').push(card));
+  return state;
+}
+
 export interface NoChoice extends PlayerChoice {
   type: 'no'
 };
@@ -131,8 +136,8 @@ function isEndTurn(choice: PlayerChoice): choice is EndTurn {
     return choice.type === 'endturn';
 }
 
-export async function applyEffect(state: GameState, effectfn: EffectFn, player: Player) {
-  let gen = effectfn(state);
+export async function applyEffect(state: GameState, effect: Effect, player: Player) {
+  let gen = effect(state);
   let result = await gen.next(null as any);  // hmm
   while (!result.done) {
     state = result.value[0];
@@ -190,8 +195,7 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
         throw Error('Bad card')
       }
       state = await applyEffect(state, card.fn, player);
-      state = state.set('hand', state.get('hand').delete(play.index));
-      state = state.set('discard', state.get('discard').push(card));
+      state = discard(state, play.index);
     } else {
       throw Error('Unexpected choice ' + choice)
     }
