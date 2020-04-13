@@ -1,5 +1,6 @@
 import React from 'react';
 import './App.css';
+import CardComponent from './components/Card';
 // import { debounce } from 'lodash';
 import * as game from './game/core';
 
@@ -50,14 +51,13 @@ class App extends React.Component<AppProps, AppState> {
         <div>
           {this.props.state.get('deck').toJS().map((card, i) => {
             return (
-              <div className="card" key={i}>{card.name}</div>
+              <CardComponent key={i} card={card}/>
             );
           })}
         </div>
         Hand
         <div>
           {this.props.state.get('hand').toJS().map((card, i) => {
-            const classNames = ["card"];
             let onClick;
             if (this.props.question && this.props.question.type === 'play') {
               onClick = () => {
@@ -68,7 +68,7 @@ class App extends React.Component<AppProps, AppState> {
               }
             }
             return (
-              <div className={classNames.join(" ")} key={i} onClick={onClick}>{card.name}</div>
+              <CardComponent card={card} key={i} onClick={onClick}/>
             );
           })}
         </div>
@@ -76,7 +76,7 @@ class App extends React.Component<AppProps, AppState> {
         <div>
           {this.props.state.get('discard').toJS().map((card, i) => {
             return (
-              <div className="card" key={i}>{card.name}</div>
+              <CardComponent key={i} card={card}/>
             );
           })}
         </div>

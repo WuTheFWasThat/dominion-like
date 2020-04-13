@@ -19,6 +19,7 @@ export type Effect = {
 
 export type Card = {
   name: string,
+  description: string,
   fn: EffectFn,
 }
 
@@ -40,6 +41,7 @@ export type GameState = Immutable.Record<{
 
 export const Copper: Card = {
   name: 'copper',
+  description: '+$1',
   /* eslint-disable require-yield */
   fn: function* (state: GameState) {
     return state.set('money', state.get('money') + 1);
@@ -48,6 +50,7 @@ export const Copper: Card = {
 };
 export const Estate: Card = {
   name: 'estate',
+  description: '+1 victory point',
   /* eslint-disable require-yield */
   fn: function* (state: GameState) {
     return state.set('victory', state.get('victory') + 1);
