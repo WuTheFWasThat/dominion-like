@@ -38,6 +38,9 @@ class App extends React.Component<AppProps, AppState> {
 
     return (
       <div>
+        <div style={{color: 'red'}}>
+            {this.props.state.get('error') || ''}
+        </div>
         Turn: {this.props.state.get('turn')}
         <br/>
         Actions: {this.props.state.get('actions')}
@@ -46,6 +49,27 @@ class App extends React.Component<AppProps, AppState> {
         <br/>
         Points: {this.props.state.get('victory')}
         <br/>
+        <br/>
+        Supply:
+        <br/>
+        <div>
+          {this.props.state.get('supply').toJS().map((supply_card, i) => {
+            let onClick;
+            if (this.props.question && this.props.question.type === 'play') {
+              onClick = () => {
+                this.props.choice_cb({
+                  type: 'buy',
+                  cardname: supply_card.card.name,
+                } as game.BuyChoice);
+              }
+            }
+            return (
+              <span key={i}>
+                ${supply_card.cost} <CardComponent key={i} card={supply_card.card} onClick={onClick}/>
+              </span>
+            );
+          })}
+        </div>
         <br/>
         Deck
         <div>
