@@ -1,6 +1,8 @@
 import Immutable from 'immutable';
 import * as random from "random-js";
 
+import * as cards from "./cards";
+
 
 export type PlayerQuestion = {
   type: string
@@ -29,30 +31,14 @@ export type GameState = Immutable.Record<{
   discard: Immutable.List<Card>,
   hand: Immutable.List<Card>,
   trash: Immutable.List<Card>,
+  supply: Immutable.List<Immutable.Record<{
+    card: Card, cost: number,
+  }>>,
   situations: Immutable.List<Card>,
   extra: any,
   random: random.Engine,
   previous: null | GameState,
 }>;
-
-export const Copper: Card = {
-  name: 'copper',
-  description: '+$1',
-  /* eslint-disable require-yield */
-  fn: function* (state: GameState) {
-    return state.set('money', state.get('money') + 1);
-  }
-  /* eslint-enable require-yield */
-};
-export const Estate: Card = {
-  name: 'estate',
-  description: '+1 victory point',
-  /* eslint-disable require-yield */
-  fn: function* (state: GameState) {
-    return state.set('victory', state.get('victory') + 1);
-  }
-  /* eslint-enable require-yield */
-};
 
 export const InitialState = Immutable.Record({
   ended: false,
@@ -60,7 +46,8 @@ export const InitialState = Immutable.Record({
   actions: 0,
   money: 0,
   victory: 0,
-  deck: Immutable.List([Copper, Copper, Copper, Copper, Copper, Copper, Copper, Estate, Estate, Estate]),
+  supply: Immutable.List([]),
+  deck: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Estate]),
   discard: Immutable.List([]),
   hand: Immutable.List([]),
   trash: Immutable.List([]),
@@ -74,10 +61,24 @@ export const InitialState = Immutable.Record({
 export function initial_state(seed: number | null): GameState {
   const mt = random.MersenneTwister19937.seed(seed || random.createEntropy()[0]);
   const state: GameState = InitialState();
+  const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 3); // TODO: change to ten?
+  kingdom.forEach((card) => {
+    state.set('supply', state.get('supply').push(
+      Immutable.Record({
+        card: card, cost: random.integer(1, 3)(mt),
+      })()
+    ));
+  });
   return state.set('random', mt);
 }
 
-export function draw(state: GameState): GameState {
+export function draw(state: GameState, ndraw?: number): GameState {
+  if (ndraw === undefined) {
+    ndraw = 1;
+  }
+  if (ndraw === 0) {
+    return state;
+  }
   if (state.get('deck').size === 0) {
     state = state.set('deck', state.get('discard'));
     state = state.set('discard', Immutable.List());
@@ -94,7 +95,7 @@ export function draw(state: GameState): GameState {
   }
   state = state.set('deck', state.get('deck').delete(i));
   state = state.set('hand', state.get('hand').push(drawn));
-  return state;
+  return draw(state, ndraw - 1);
 }
 
 export function discard(state: GameState, index: number): GameState {
@@ -170,6 +171,9 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
       state = state.set('previous', prevstate);
     }
     if (new_turn) {
+      for (let i = 0; i < state.get('hand').size; i++) {
+        state = discard(state, 0);
+      }
       for (let i = 0; i < state.get('draw_per_turn'); i++) {
         state = draw(state);
       }
