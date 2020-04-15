@@ -55,7 +55,7 @@ class App extends React.Component<AppProps, AppState> {
         <div>
           {this.props.state.get('supply').toJS().map((supply_card, i) => {
             let onClick;
-            if (this.props.question && this.props.question.type === 'play') {
+            if (this.props.question && game.isActionQuestion(this.props.question)) {
               onClick = () => {
                 this.props.choice_cb({
                   type: 'buy',
@@ -83,7 +83,7 @@ class App extends React.Component<AppProps, AppState> {
         <div>
           {this.props.state.get('hand').toJS().map((card, i) => {
             let onClick;
-            if (this.props.question && this.props.question.type === 'play') {
+            if (this.props.question && game.isActionQuestion(this.props.question)) {
               onClick = () => {
                 this.props.choice_cb({
                   type: 'play',

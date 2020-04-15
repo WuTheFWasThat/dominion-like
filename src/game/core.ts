@@ -122,9 +122,13 @@ function isUndo(choice: PlayerChoice): choice is UndoChoice {
     return choice.type === 'undo';
 }
 
-const PlayQuestion: PlayerQuestion = {
-  type: 'play'
+export interface ActionQuestion extends PlayerQuestion {
+  type: 'action'
 };
+export function isActionQuestion(q: PlayerQuestion): q is ActionQuestion {
+    return q.type === 'action';
+}
+
 export interface PlayChoice extends PlayerChoice {
   type: 'play';
   index: number;
@@ -199,8 +203,11 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     }
     state = state.set('error', null);
     state = state.set('money', state.get('money') - supply_card.get('cost'));
+    // buys increase card costs
     state = setSupplyCardCost(state, choice.cardname, supply_card.get('cost') + 1);
     state = state.set('discard', state.get('discard').push(supply_card.get('card')));
+    // buys cost actions too
+    state = state.set('actions', state.get('actions') - 1);
   } else if (isPlay(choice)) {
     let play: PlayChoice = (choice as PlayChoice);
     let card = state.get('hand').get(play.index);
@@ -226,7 +233,7 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
     let new_turn = false;
     let prevstate = state;
 
-    let question = PlayQuestion;
+    let question: ActionQuestion = { type: 'action' };
     let choice: PlayerChoice;
     if (state.get('actions') === 0) {
       new_turn = true;
