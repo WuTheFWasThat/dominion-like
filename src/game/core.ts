@@ -30,7 +30,7 @@ export type GameState = Immutable.Record<{
   energy: number,
   money: number,
   victory: number,
-  deck: Immutable.List<Card>,
+  draw: Immutable.List<Card>,
   discard: Immutable.List<Card>,
   hand: Immutable.List<Card>,
   trash: Immutable.List<Card>,
@@ -53,7 +53,7 @@ export const InitialState = Immutable.Record({
     card: cards.Reboot,
     cost: 0,
   })()]),
-  deck: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Estate]),
+  draw: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Estate]),
   discard: Immutable.List([]),
   hand: Immutable.List([]),
   trash: Immutable.List([]),
@@ -83,7 +83,7 @@ export function initial_state(seed: number | null): GameState {
       })()
     ));
   });
-  state = state.set('energy', 100);
+  state = state.set('energy', 32);
   return state.set('random', mt);
 }
 
@@ -94,21 +94,21 @@ export function draw(state: GameState, ndraw?: number): GameState {
   if (ndraw === 0) {
     return state;
   }
-  if (state.get('deck').size === 0) {
-    state = state.set('deck', state.get('discard'));
+  if (state.get('draw').size === 0) {
+    state = state.set('draw', state.get('discard'));
     state = state.set('discard', Immutable.List());
   }
-  const n = state.get('deck').size;
+  const n = state.get('draw').size;
   if (n === 0) {
     // nothing to draw
     return state
   }
   const i = random.integer(0, n-1)(state.get('random'));
-  let drawn = state.get('deck').get(i);
+  let drawn = state.get('draw').get(i);
   if (drawn === undefined) {
     throw Error(`Unable to draw? ${n} ${i}`)
   }
-  state = state.set('deck', state.get('deck').delete(i));
+  state = state.set('draw', state.get('draw').delete(i));
   state = state.set('hand', state.get('hand').push(drawn));
   return draw(state, ndraw - 1);
 }
@@ -202,6 +202,26 @@ function setSupplyCardCost(state: GameState, cardName: string, cost: number, typ
     }
   }
   throw Error('No such supply card');
+}
+
+export function count_in_deck(state: GameState, fn: (card: Card) => boolean): number {
+  let count = 0;
+  state.get('draw').forEach((card) => {
+    if (fn(card)) {
+      count = count + 1;
+    }
+  })
+  state.get('discard').forEach((card) => {
+    if (fn(card)) {
+      count = count + 1;
+    }
+  })
+  state.get('hand').forEach((card) => {
+    if (fn(card)) {
+      count = count + 1;
+    }
+  })
+  return count;
 }
 
 async function playTurn(state: GameState, choice: PlayerChoice, player: Player) {

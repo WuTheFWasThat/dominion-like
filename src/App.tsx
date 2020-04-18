@@ -93,9 +93,9 @@ class App extends React.Component<AppProps, AppState> {
         </div>
         <br/>
 
-        Deck
+        Draw
         <div>
-          {this.props.state.get('deck').toJS().map((card, i) => {
+          {this.props.state.get('draw').toJS().map((card, i) => {
             return (
               <CardComponent key={i} card={card}/>
             );

@@ -1,4 +1,5 @@
 import { Card, GameState, draw, discard } from  './core';
+import * as game from  './core';
 
 /* eslint-disable require-yield */
 
@@ -68,6 +69,15 @@ export const Province: Card = register_kingdom_card({
   }
 });
 
+
+export const Gardens: Card = register_kingdom_card({
+  name: 'Gardens',
+  description: '+N victory points, where N is the number of gardens in your deck',
+  fn: function* (state: GameState) {
+    let n = game.count_in_deck(state, (card) => card.name === 'Gardens');
+    return state.set('victory', state.get('victory') + n);
+  }
+});
 
 
 export const Smithy: Card = register_kingdom_card({
