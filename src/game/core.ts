@@ -23,10 +23,10 @@ export type SupplyCard = Immutable.Record<{
   card: Card, cost: number,
 }>;
 
+type BuyType = 'supply' | 'events';
+
 export type GameState = Immutable.Record<{
   ended: boolean,
-  turn: number,
-  draw_per_turn: number,
   actions: number,
   money: number,
   victory: number,
@@ -35,6 +35,7 @@ export type GameState = Immutable.Record<{
   hand: Immutable.List<Card>,
   trash: Immutable.List<Card>,
   supply: Immutable.List<SupplyCard>,
+  events: Immutable.List<SupplyCard>,
   situations: Immutable.List<Card>,
   extra: any,
   random: random.Engine,
@@ -44,17 +45,19 @@ export type GameState = Immutable.Record<{
 
 export const InitialState = Immutable.Record({
   ended: false,
-  turn: 0,
   actions: 0,
   money: 0,
   victory: 0,
   supply: Immutable.List([]),
+  events: Immutable.List([Immutable.Record({
+    card: cards.Reboot,
+    cost: 0,
+  })()]),
   deck: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Estate]),
   discard: Immutable.List([]),
   hand: Immutable.List([]),
   trash: Immutable.List([]),
   situations: Immutable.List([]),
-  draw_per_turn: 5,
   extra: {},
   random: null as any,
   error: null,
@@ -68,10 +71,11 @@ export function initial_state(seed: number | null): GameState {
   kingdom.forEach((card) => {
     state = state.set('supply', state.get('supply').push(
       Immutable.Record({
-        card: card, cost: random.integer(1, 5)(mt),
+        card: card, cost: random.integer(0, 5)(mt),
       })()
     ));
   });
+  state = state.set('actions', 100);
   return state.set('random', mt);
 }
 
@@ -145,12 +149,14 @@ function isBuy(choice: PlayerChoice): choice is BuyChoice {
     return choice.type === 'buy';
 }
 
-export interface EndTurn extends PlayerChoice {
-  type: 'endturn';
+export interface EventChoice extends PlayerChoice {
+  type: 'event';
+  cardname: string;
+};
+function isEvent(choice: PlayerChoice): choice is EventChoice {
+    return choice.type === 'event';
 }
-function isEndTurn(choice: PlayerChoice): choice is EndTurn {
-    return choice.type === 'endturn';
-}
+
 
 export async function applyEffect(state: GameState, effect: Effect, player: Player) {
   let gen = effect(state);
@@ -164,9 +170,9 @@ export async function applyEffect(state: GameState, effect: Effect, player: Play
   return result.value;
 }
 
-function getSupplyCard(state: GameState, cardName: string): SupplyCard | null {
-  for (let i = 0; i < state.get('supply').size; i++) {
-    const supplyCard = state.get('supply').get(i);
+function getSupplyCard(state: GameState, cardName: string, type: BuyType): SupplyCard | null {
+  for (let i = 0; i < state.get(type).size; i++) {
+    const supplyCard = state.get(type).get(i);
     if (supplyCard === undefined) {
       throw Error(`Supply card out of bounds ${i}`);
     }
@@ -177,14 +183,14 @@ function getSupplyCard(state: GameState, cardName: string): SupplyCard | null {
   return null;
 }
 
-function setSupplyCardCost(state: GameState, cardName: string, cost: number): GameState {
-  for (let i = 0; i < state.get('supply').size; i++) {
-    const supplyCard = state.get('supply').get(i);
+function setSupplyCardCost(state: GameState, cardName: string, cost: number, type: BuyType): GameState {
+  for (let i = 0; i < state.get(type).size; i++) {
+    const supplyCard = state.get(type).get(i);
     if (supplyCard === undefined) {
       throw Error(`Supply card out of bounds ${i}`);
     }
     if (supplyCard.get('card').name === cardName) {
-      return state.set('supply', state.get('supply').set(i, supplyCard.set('cost', cost)));
+      return state.set(type, state.get(type).set(i, supplyCard.set('cost', cost)));
     }
   }
   throw Error('No such supply card');
@@ -192,7 +198,7 @@ function setSupplyCardCost(state: GameState, cardName: string, cost: number): Ga
 
 async function playTurn(state: GameState, choice: PlayerChoice, player: Player) {
   if (isBuy(choice)) {
-    const supply_card = getSupplyCard(state, choice.cardname);
+    const supply_card = getSupplyCard(state, choice.cardname, 'supply');
     if (supply_card === null) {
       state = state.set('error', 'Card not in supply?');
       return state;
@@ -204,8 +210,23 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     state = state.set('error', null);
     state = state.set('money', state.get('money') - supply_card.get('cost'));
     // buys increase card costs
-    state = setSupplyCardCost(state, choice.cardname, supply_card.get('cost') + 1);
+    state = setSupplyCardCost(state, choice.cardname, supply_card.get('cost') + 1, 'supply');
     state = state.set('discard', state.get('discard').push(supply_card.get('card')));
+    // buys cost actions too
+    state = state.set('actions', state.get('actions') - 1);
+  } else if (isEvent(choice)) {
+    const supply_card = getSupplyCard(state, choice.cardname, 'events');
+    if (supply_card === null) {
+      state = state.set('error', 'Card not in supply?');
+      return state;
+    }
+    if (state.get('money') < supply_card.get('cost')) {
+      state = state.set('error', 'Not enough money');
+      return state;
+    }
+    state = state.set('error', null);
+    state = state.set('money', state.get('money') - supply_card.get('cost'));
+    state = await applyEffect(state, supply_card.get('card').fn, player);
     // buys cost actions too
     state = state.set('actions', state.get('actions') - 1);
   } else if (isPlay(choice)) {
@@ -220,7 +241,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     state = discard(state, play.index);
     state = state.set('actions', state.get('actions') - 1);
   } else {
-    state = state.set('error', 'Unexpected choice ' + choice);
+    state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));
   }
   return state
 }
@@ -229,35 +250,11 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
   let history = [state];
 
   await player.next(null as any);  // TODO: hmm
-  while (!state.get('ended')) {
-    let new_turn = false;
+  while (state.get('actions') > 0) {
     let prevstate = state;
 
     let question: ActionQuestion = { type: 'action' };
-    let choice: PlayerChoice;
-    if (state.get('actions') === 0) {
-      new_turn = true;
-      choice = {type: 'nochoice'};
-    } else {
-      choice = (await player.next([state, question])).value;
-    }
-
-    if (isEndTurn(choice)) {
-      new_turn = true;
-      state = state.set('previous', prevstate);
-    }
-    if (new_turn) {
-      for (let i = 0; i < state.get('hand').size; i++) {
-        state = discard(state, 0);
-      }
-      for (let i = 0; i < state.get('draw_per_turn'); i++) {
-        state = draw(state);
-      }
-      state = state.set('turn', state.get('turn') + 1);
-      state = state.set('actions', 1);
-      state = state.set('error', null);
-      continue;
-    }
+    let choice: PlayerChoice = (await player.next([state, question])).value;
 
     if (isUndo(choice)) {
       let undostate = state.get('previous');
@@ -270,7 +267,6 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
         continue;
       }
     }
-
     state = await playTurn(state, choice, player);
     state = state.set('previous', prevstate);
   }

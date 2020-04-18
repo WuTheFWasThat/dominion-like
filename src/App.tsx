@@ -41,8 +41,6 @@ class App extends React.Component<AppProps, AppState> {
         <div style={{color: 'red'}}>
             {this.props.state.get('error') || ''}
         </div>
-        Turn: {this.props.state.get('turn')}
-        <br/>
         Actions: {this.props.state.get('actions')}
         <br/>
         Money: {this.props.state.get('money')}
@@ -50,6 +48,7 @@ class App extends React.Component<AppProps, AppState> {
         Points: {this.props.state.get('victory')}
         <br/>
         <br/>
+
         Supply:
         <br/>
         <div>
@@ -71,6 +70,29 @@ class App extends React.Component<AppProps, AppState> {
           })}
         </div>
         <br/>
+
+        Events:
+        <br/>
+        <div>
+          {this.props.state.get('events').toJS().map((event_card, i) => {
+            let onClick;
+            if (this.props.question && game.isActionQuestion(this.props.question)) {
+              onClick = () => {
+                this.props.choice_cb({
+                  type: 'event',
+                  cardname: event_card.card.name,
+                } as game.EventChoice);
+              }
+            }
+            return (
+              <span key={i}>
+                ${event_card.cost} <CardComponent key={i} card={event_card.card} onClick={onClick}/>
+              </span>
+            );
+          })}
+        </div>
+        <br/>
+
         Deck
         <div>
           {this.props.state.get('deck').toJS().map((card, i) => {

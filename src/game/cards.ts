@@ -1,4 +1,4 @@
-import { Card, GameState, draw } from  './core';
+import { Card, GameState, draw, discard } from  './core';
 
 /* eslint-disable require-yield */
 
@@ -60,3 +60,17 @@ export const Lab: Card = register_kingdom_card({
     return draw(state, 2);
   }
 });
+
+export const Reboot: Card = {
+  name: 'reboot',
+  description: 'Discard your hand, draw 5 cards',
+  fn: function* (state: GameState) {
+    for (let i = 0; i < state.get('hand').size; i++) {
+      state = discard(state, 0);
+    }
+    for (let i = 0; i < 5; i++) {
+      state = draw(state);
+    }
+    return state;
+  }
+};
