@@ -17,6 +17,7 @@ export type Effect = (state: GameState) => Generator<[GameState, PlayerQuestion 
 export type Card = {
   name: string,
   description: string,
+  cost_range?: [number, number],
   fn: Effect,
 }
 export type SupplyCard = Immutable.Record<{
@@ -97,20 +98,29 @@ export function initial_state(seed: number | null): GameState {
   let state: GameState = InitialState();
   const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 3); // TODO: change to ten?
   kingdom.forEach((card) => {
+    let cost_range = card.cost_range || [0, 5];
     state = state.set('supply', state.get('supply').push(
       Immutable.Record({
-        card: card, cost: random.integer(0, 5)(mt),
+        card: card, cost: random.integer(cost_range[0], cost_range[1])(mt),
       })()
     ));
   });
   const kingdom_events = random.sample(mt, cards.KINGDOM_EVENTS, 1); // TODO: change to ten?
   kingdom_events.forEach((card) => {
+    let cost_range = card.cost_range || [0, 5];
     state = state.set('events', state.get('events').push(
       Immutable.Record({
-        card: card, cost: random.integer(0, 5)(mt),
+        card: card, cost: random.integer(cost_range[0], cost_range[1])(mt),
       })()
     ));
   });
+
+  // useful for testing
+  // state = state.set('hand', state.get('hand').push(
+  //   cards.Chapel
+  // ));
+  // state = state.set('money', 100);
+
   state = state.set('energy', 32);
   return state.set('random', mt);
 }
@@ -151,13 +161,16 @@ export function discard(state: GameState, index: number): GameState {
   return state;
 }
 
-export function trash(state: GameState, index: number, type: DeckType): GameState {
-  let card = state.get(type).get(index);
-  if (card === undefined) {
-    throw Error(`${type} card out of bounds ${index}`);
+export function trash(state: GameState, indices: Array<number>, type: DeckType): GameState {
+  indices = indices.slice().sort();
+  for (let index = indices.length -1; index >= 0; index--) {
+    let card = state.get(type).get(index);
+    if (card === undefined) {
+      throw Error(`${type} card out of bounds ${index}`);
+    }
+    state = state.set(type, state.get(type).remove(index));
+    state = state.set('trash', state.get('trash').push(card));
   }
-  state = state.set(type, state.get(type).remove(index));
-  state = state.set('trash', state.get('trash').push(card));
   return state;
 }
 
@@ -202,6 +215,18 @@ export interface EventChoice extends PlayerChoice {
 function isEvent(choice: PlayerChoice): choice is EventChoice {
     return choice.type === 'event';
 }
+
+export interface PickHandQuestion extends PlayerQuestion {
+  type: 'pickhand',
+  message: string,
+};
+export function isPickHandQuestion(q: PlayerQuestion): q is PickHandQuestion {
+    return q.type === 'pickhand';
+}
+export interface PickHandChoice extends PlayerChoice {
+  type: 'pickhand',
+  indices: Array<number>,
+};
 
 
 export async function applyEffect(state: GameState, effect: Effect, player: Player) {
@@ -321,8 +346,9 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
       return state
     }
     state = state.set('error', null);
+    state = state.set('hand', state.get('hand').remove(play.index));
     state = await applyEffect(state, card.fn, player);
-    state = discard(state, play.index);
+    state = state.set('discard', state.get('discard').push(card));
     state = state.set('energy', state.get('energy') - 1);
   } else {
     state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));

@@ -90,9 +90,10 @@ export const Smithy: Card = register_kingdom_card({
 
 export const Peddler: Card = register_kingdom_card({
   name: 'Peddler',
-  description: '+1 card, +$2',
+  description: '+1 card, +$1',
+  cost_range: [0, 0],
   fn: function* (state: GameState) {
-    state = state.set('money', state.get('money') + 2);
+    state = state.set('money', state.get('money') + 1);
     return draw(state, 1);
   }
 });
@@ -106,11 +107,22 @@ export const Lab: Card = register_kingdom_card({
   }
 });
 
+export const Chapel: Card = register_kingdom_card({
+  name: 'Chapel',
+  description: 'Trash a card from your hand',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
+    state = trash(state, choice.indices, 'hand');
+    return state;
+  }
+});
+
 export const Reboot: Card = {
   name: 'Reboot',
   description: 'Discard your hand, draw 5 cards',
   fn: function* (state: GameState) {
-    for (let i = 0; i < state.get('hand').size; i++) {
+    let n = state.get('hand').size;
+    for (let i = 0; i < n; i++) {
       state = discard(state, 0);
     }
     for (let i = 0; i < 5; i++) {
@@ -145,6 +157,7 @@ export const Recruit: Card = register_kingdom_event({
 
 export const SolarPower: Card = register_kingdom_event({
   name: 'Solar Power',
+  cost_range: [10, 25],
   description: 'Once per game, +10 energy',
   fn: function* (state: GameState) {
     state = trash_event(state, 'Solar Power');

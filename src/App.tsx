@@ -11,13 +11,20 @@ type AppProps = {
   choice_cb: (choice: game.PlayerChoice) => void;
 };
 type AppState = {
+  handIndices: Array<number>,
 };
 
 class App extends React.Component<AppProps, AppState> {
   constructor(props: AppProps) {
     super(props);
 
-    this.state = {};
+    this.state = this.initialState();
+  }
+
+  initialState() {
+    return {
+      handIndices: [],
+    };
   }
 
   // updateQueryParams() {
@@ -35,6 +42,18 @@ class App extends React.Component<AppProps, AppState> {
 
   render() {
     console.log('rerender', this.props.state.toJS());
+
+    let instruction_text: string = '';
+    if (this.props.question !== null) {
+      if (game.isActionQuestion(this.props.question)) {
+        instruction_text = 'Play or buy a card!';
+      } else if (game.isPickHandQuestion(this.props.question)) {
+        instruction_text = this.props.question.message;
+      } else {
+        console.log(this.props.question);
+        throw new Error('Unhandled question');
+      }
+    }
 
     return (
       <div style={{width: '100%'}}>
@@ -59,7 +78,31 @@ class App extends React.Component<AppProps, AppState> {
         <br/>
         <br/>
 
-        Supply:
+        <b>
+        {instruction_text}
+        </b>
+        {(() => {
+          if (this.props.question && game.isPickHandQuestion(this.props.question)) {
+            let onClick = () => {
+              this.props.choice_cb({
+                type: 'pickhand',
+                indices: this.state.handIndices,
+              } as game.PickHandChoice);
+              this.setState({
+                handIndices: [],
+              });
+            };
+            return (
+              <div onClick={onClick}>
+                  Done choosing
+              </div>
+            );
+          }
+        })()}
+        <br/>
+        <br/>
+
+        Card:
         <br/>
         <div>
           {this.props.state.get('supply').toJS().map((supply_card, i) => {
@@ -119,16 +162,35 @@ class App extends React.Component<AppProps, AppState> {
             <div>
               {this.props.state.get('hand').toJS().map((card, i) => {
                 let onClick;
-                if (this.props.question && game.isActionQuestion(this.props.question)) {
-                  onClick = () => {
-                    this.props.choice_cb({
-                      type: 'play',
-                      index: i,
-                    } as game.PlayChoice);
+                let classNames = [];
+                if (this.props.question) {
+                  if (game.isActionQuestion(this.props.question)) {
+                    onClick = () => {
+                      this.props.choice_cb({
+                        type: 'play',
+                        index: i,
+                      } as game.PlayChoice);
+                    }
+                  } else if (game.isPickHandQuestion(this.props.question)) {
+                    let selected = this.state.handIndices.findIndex((el) => el === i) !== -1;
+                    if (selected) {
+                      classNames.push('selected');
+                    }
+                    onClick = () => {
+                      if (selected) {
+                        this.setState({
+                          handIndices: this.state.handIndices.filter((el) => el !== i),
+                        });
+                      } else {
+                        this.setState({
+                          handIndices: this.state.handIndices.concat([i]),
+                        });
+                      }
+                    }
                   }
                 }
                 return (
-                  <CardComponent card={card} key={i} onClick={onClick}/>
+                  <CardComponent classNames={classNames} card={card} key={i} onClick={onClick}/>
                 );
               })}
             </div>
@@ -146,6 +208,17 @@ class App extends React.Component<AppProps, AppState> {
         </div>
 
         <br/>
+
+        <div>
+          Trash
+          <div>
+            {this.props.state.get('trash').toJS().map((card, i) => {
+              return (
+                <CardComponent key={i} card={card}/>
+              );
+            })}
+          </div>
+        </div>
 
       </div>
     );
