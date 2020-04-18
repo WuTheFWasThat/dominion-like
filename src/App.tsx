@@ -41,7 +41,7 @@ class App extends React.Component<AppProps, AppState> {
         <div style={{color: 'red'}}>
             {this.props.state.get('error') || ''}
         </div>
-        Actions: {this.props.state.get('actions')}
+        Energy: {this.props.state.get('energy')}
         <br/>
         Money: {this.props.state.get('money')}
         <br/>

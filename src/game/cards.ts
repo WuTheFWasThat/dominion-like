@@ -2,22 +2,6 @@ import { Card, GameState, draw, discard } from  './core';
 
 /* eslint-disable require-yield */
 
-export const Copper: Card = {
-  name: 'copper',
-  description: '+$1',
-  fn: function* (state: GameState) {
-    return state.set('money', state.get('money') + 1);
-  }
-};
-
-export const Estate: Card = {
-  name: 'estate',
-  description: '+1 victory point',
-  fn: function* (state: GameState) {
-    return state.set('victory', state.get('victory') + 1);
-  }
-};
-
 export let KINGDOM_CARDS: Array<Card> = [];
 
 function register_kingdom_card(card: Card) {
@@ -25,17 +9,69 @@ function register_kingdom_card(card: Card) {
   return card;
 }
 
-export const Village: Card = register_kingdom_card({
-  name: 'village',
-  description: '+2 actions +1 card',
+export let KINGDOM_EVENTS: Array<Card> = [];
+
+function register_kingdom_event(card: Card) {
+  KINGDOM_EVENTS.push(card);
+  return card;
+}
+
+
+export const Copper: Card = register_kingdom_card({
+  name: 'Copper',
+  description: '+$1',
   fn: function* (state: GameState) {
-    state = state.set('actions', state.get('actions') + 2);
-    return draw(state);
+    return state.set('money', state.get('money') + 1);
   }
 });
 
+export const Silver: Card = register_kingdom_card({
+  name: 'Silver',
+  description: '+$2',
+  fn: function* (state: GameState) {
+    return state.set('money', state.get('money') + 2);
+  }
+});
+
+
+export const Gold: Card = register_kingdom_card({
+  name: 'Gold',
+  description: '+$3',
+  fn: function* (state: GameState) {
+    return state.set('money', state.get('money') + 3);
+  }
+});
+
+
+export const Estate: Card = register_kingdom_card({
+  name: 'Estate',
+  description: '+1 victory point',
+  fn: function* (state: GameState) {
+    return state.set('victory', state.get('victory') + 1);
+  }
+});
+
+export const Duchy: Card = register_kingdom_card({
+  name: 'Duchy',
+  description: '+2 victory points',
+  fn: function* (state: GameState) {
+    return state.set('victory', state.get('victory') + 1);
+  }
+});
+
+
+export const Province: Card = register_kingdom_card({
+  name: 'Province',
+  description: '+3 victory points',
+  fn: function* (state: GameState) {
+    return state.set('victory', state.get('victory') + 1);
+  }
+});
+
+
+
 export const Smithy: Card = register_kingdom_card({
-  name: 'smithy',
+  name: 'Smithy',
   description: '+3 cards',
   fn: function* (state: GameState) {
     return draw(state, 3);
@@ -43,26 +79,25 @@ export const Smithy: Card = register_kingdom_card({
 });
 
 export const Peddler: Card = register_kingdom_card({
-  name: 'peddler',
-  description: '+1 card, +1 action, +$1',
+  name: 'Peddler',
+  description: '+1 card, +$2',
   fn: function* (state: GameState) {
-    state = state.set('actions', state.get('actions') + 2);
     state = state.set('money', state.get('money') + 2);
     return draw(state, 1);
   }
 });
 
 export const Lab: Card = register_kingdom_card({
-  name: 'lab',
-  description: '+2 card, +1 action',
+  name: 'Lab',
+  description: '+2 card, +1 energy',
   fn: function* (state: GameState) {
-    state = state.set('actions', state.get('actions') + 1);
+    state = state.set('energy', state.get('energy') + 1);
     return draw(state, 2);
   }
 });
 
 export const Reboot: Card = {
-  name: 'reboot',
+  name: 'Reboot',
   description: 'Discard your hand, draw 5 cards',
   fn: function* (state: GameState) {
     for (let i = 0; i < state.get('hand').size; i++) {
@@ -74,3 +109,26 @@ export const Reboot: Card = {
     return state;
   }
 };
+
+export const Cellar: Card = register_kingdom_event({
+  name: 'Calculated gamble',
+  description: 'Discard your hand, draw that many cards',
+  fn: function* (state: GameState) {
+    let n = state.get('hand').size;
+    for (let i = 0; i < n; i++) {
+      state = discard(state, 0);
+    }
+    for (let i = 0; i < n; i++) {
+      state = draw(state);
+    }
+    return state;
+  }
+});
+
+export const Recruit: Card = register_kingdom_event({
+  name: 'Recruit',
+  description: 'Draw two cards',
+  fn: function* (state: GameState) {
+    return draw(state, 2);
+  }
+});
