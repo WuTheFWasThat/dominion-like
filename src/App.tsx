@@ -37,7 +37,7 @@ class App extends React.Component<AppProps, AppState> {
     console.log('rerender', this.props.state.toJS());
 
     return (
-      <div>
+      <div style={{width: '100%'}}>
         <div style={{color: 'red'}}>
             {this.props.state.get('error') || ''}
         </div>
@@ -46,6 +46,16 @@ class App extends React.Component<AppProps, AppState> {
         Money: {this.props.state.get('money')}
         <br/>
         Points: {this.props.state.get('victory')}
+        <br/>
+        <br/>
+
+        <div onClick={() => {
+          this.props.choice_cb({
+            type: 'undo',
+          } as game.UndoChoice);
+        }} style={{border: '1px solid red', display: 'inline-block'}}>
+          Undo
+        </div>
         <br/>
         <br/>
 
@@ -93,49 +103,50 @@ class App extends React.Component<AppProps, AppState> {
         </div>
         <br/>
 
-        Draw
-        <div>
-          {this.props.state.get('draw').toJS().map((card, i) => {
-            return (
-              <CardComponent key={i} card={card}/>
-            );
-          })}
-        </div>
-        Hand
-        <div>
-          {this.props.state.get('hand').toJS().map((card, i) => {
-            let onClick;
-            if (this.props.question && game.isActionQuestion(this.props.question)) {
-              onClick = () => {
-                this.props.choice_cb({
-                  type: 'play',
-                  index: i,
-                } as game.PlayChoice);
-              }
-            }
-            return (
-              <CardComponent card={card} key={i} onClick={onClick}/>
-            );
-          })}
-        </div>
-        Discard
-        <div>
-          {this.props.state.get('discard').toJS().map((card, i) => {
-            return (
-              <CardComponent key={i} card={card}/>
-            );
-          })}
+        <div style={{display: "flex", flexDirection: "row", width: '100%'}}>
+          <div style={{flexBasis: '33%', flexGrow: 0}}>
+            Draw
+            <div>
+              {this.props.state.get('draw').toJS().map((card, i) => {
+                return (
+                  <CardComponent key={i} card={card}/>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{flexBasis: '33%', flexGrow: 0}}>
+            Hand
+            <div>
+              {this.props.state.get('hand').toJS().map((card, i) => {
+                let onClick;
+                if (this.props.question && game.isActionQuestion(this.props.question)) {
+                  onClick = () => {
+                    this.props.choice_cb({
+                      type: 'play',
+                      index: i,
+                    } as game.PlayChoice);
+                  }
+                }
+                return (
+                  <CardComponent card={card} key={i} onClick={onClick}/>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{flexBasis: '33%', flexGrow: 0}}>
+            Discard
+            <div>
+              {this.props.state.get('discard').toJS().map((card, i) => {
+                return (
+                  <CardComponent key={i} card={card}/>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <br/>
 
-        <div onClick={() => {
-          this.props.choice_cb({
-            type: 'undo',
-          } as game.UndoChoice);
-        }}>
-          Undo
-        </div>
       </div>
     );
   }

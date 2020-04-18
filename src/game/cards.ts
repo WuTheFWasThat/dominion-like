@@ -1,4 +1,4 @@
-import { Card, GameState, draw, discard } from  './core';
+import { Card, GameState, draw, discard, trash, trash_event } from  './core';
 import * as game from  './core';
 
 /* eslint-disable require-yield */
@@ -18,56 +18,56 @@ function register_kingdom_event(card: Card) {
 }
 
 
-export const Copper: Card = register_kingdom_card({
+export const Copper: Card = {
   name: 'Copper',
   description: '+$1',
   fn: function* (state: GameState) {
     return state.set('money', state.get('money') + 1);
   }
-});
+};
 
-export const Silver: Card = register_kingdom_card({
+export const Silver: Card = {
   name: 'Silver',
   description: '+$2',
   fn: function* (state: GameState) {
     return state.set('money', state.get('money') + 2);
   }
-});
+};
 
 
-export const Gold: Card = register_kingdom_card({
+export const Gold: Card = {
   name: 'Gold',
   description: '+$3',
   fn: function* (state: GameState) {
     return state.set('money', state.get('money') + 3);
   }
-});
+};
 
 
-export const Estate: Card = register_kingdom_card({
+export const Estate: Card = {
   name: 'Estate',
   description: '+1 victory point',
   fn: function* (state: GameState) {
     return state.set('victory', state.get('victory') + 1);
   }
-});
+};
 
-export const Duchy: Card = register_kingdom_card({
+export const Duchy: Card = {
   name: 'Duchy',
   description: '+2 victory points',
   fn: function* (state: GameState) {
     return state.set('victory', state.get('victory') + 1);
   }
-});
+};
 
 
-export const Province: Card = register_kingdom_card({
+export const Province: Card = {
   name: 'Province',
   description: '+3 victory points',
   fn: function* (state: GameState) {
     return state.set('victory', state.get('victory') + 1);
   }
-});
+};
 
 
 export const Gardens: Card = register_kingdom_card({
@@ -140,5 +140,15 @@ export const Recruit: Card = register_kingdom_event({
   description: 'Draw two cards',
   fn: function* (state: GameState) {
     return draw(state, 2);
+  }
+});
+
+export const SolarPower: Card = register_kingdom_event({
+  name: 'Solar Power',
+  description: 'Once per game, +10 energy',
+  fn: function* (state: GameState) {
+    state = trash_event(state, 'Solar Power');
+    state = state.set('energy', state.get('energy') + 10);
+    return state;
   }
 });

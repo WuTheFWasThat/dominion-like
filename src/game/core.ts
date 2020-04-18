@@ -24,6 +24,7 @@ export type SupplyCard = Immutable.Record<{
 }>;
 
 type BuyType = 'supply' | 'events';
+type DeckType = 'draw' | 'hand' | 'discard';
 
 export type GameState = Immutable.Record<{
   ended: boolean,
@@ -48,11 +49,38 @@ export const InitialState = Immutable.Record({
   energy: 0,
   money: 0,
   victory: 0,
-  supply: Immutable.List([]),
-  events: Immutable.List([Immutable.Record({
-    card: cards.Reboot,
-    cost: 0,
-  })()]),
+  supply: Immutable.List([
+    Immutable.Record({
+      card: cards.Copper,
+      cost: 0,
+    })(),
+    Immutable.Record({
+      card: cards.Silver,
+      cost: 1,
+    })(),
+    Immutable.Record({
+      card: cards.Gold,
+      cost: 2,
+    })(),
+    Immutable.Record({
+      card: cards.Estate,
+      cost: 1,
+    })(),
+    Immutable.Record({
+      card: cards.Duchy,
+      cost: 2,
+    })(),
+    Immutable.Record({
+      card: cards.Province,
+      cost: 6,
+    })(),
+  ]),
+  events: Immutable.List([
+    Immutable.Record({
+      card: cards.Reboot,
+      cost: 0,
+    })(),
+  ]),
   draw: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Estate]),
   discard: Immutable.List([]),
   hand: Immutable.List([]),
@@ -123,6 +151,16 @@ export function discard(state: GameState, index: number): GameState {
   return state;
 }
 
+export function trash(state: GameState, index: number, type: DeckType): GameState {
+  let card = state.get(type).get(index);
+  if (card === undefined) {
+    throw Error(`${type} card out of bounds ${index}`);
+  }
+  state = state.set(type, state.get(type).remove(index));
+  state = state.set('trash', state.get('trash').push(card));
+  return state;
+}
+
 export interface NoChoice extends PlayerChoice {
   type: 'no'
 };
@@ -177,6 +215,24 @@ export async function applyEffect(state: GameState, effect: Effect, player: Play
   }
   return result.value;
 }
+
+function trashSupplyCard(state: GameState, cardName: string, type: BuyType): GameState {
+  for (let i = 0; i < state.get(type).size; i++) {
+    const supplyCard = state.get(type).get(i);
+    if (supplyCard === undefined) {
+      throw Error(`Supply card out of bounds ${i}`);
+    }
+    if (supplyCard.get('card').name === cardName) {
+      return state.set(type, state.get(type).remove(i));
+    }
+  }
+  throw Error(`No such supply card found ${cardName}`);
+}
+
+export function trash_event(state: GameState, cardName: string): GameState {
+  return trashSupplyCard(state, cardName, 'events');
+}
+
 
 function getSupplyCard(state: GameState, cardName: string, type: BuyType): SupplyCard | null {
   for (let i = 0; i < state.get(type).size; i++) {

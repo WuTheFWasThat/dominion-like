@@ -9,3 +9,8 @@
   - implement card that gives N VP if N cards in hand
   - implement card that gives N VP if N copies in hand
 - add trashers
+- implement cost ranges
+
+- implement coppersmith: make all coppers in hand worth +$1
+  - separate out notion of actual card and card?
+  - easier version: make all coppers in worth +$1
