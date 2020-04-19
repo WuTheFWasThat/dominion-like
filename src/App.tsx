@@ -107,28 +107,28 @@ class App extends React.Component<AppProps, AppState> {
         Card:
         <br/>
         <div>
-          {this.props.state.get('supply').toJS().map((supply_card, i) => {
+          {this.props.state.get('supply').map((supply_card, i) => {
             let onClick;
             if (this.props.question) {
               if (game.isActionQuestion(this.props.question)) {
                 onClick = () => {
                   this.props.choice_cb({
                     type: 'buy',
-                    cardname: supply_card.card.name,
+                    cardname: supply_card.get('card').get('name'),
                   } as game.BuyChoice);
                 }
               } else if (game.isPickSupplyQuestion(this.props.question)) {
                 onClick = () => {
                   this.props.choice_cb({
                     type: 'picksupply',
-                    cardname: supply_card.card.name,
+                    cardname: supply_card.get('card').get('name'),
                   } as game.PickSupplyChoice);
                 }
               }
             }
             return (
               <span key={i}>
-                ${supply_card.cost} <CardComponent key={i} state={this.props.state} card={supply_card.card} onClick={onClick}/>
+                ${supply_card.get('cost')} <CardComponent key={i} state={this.props.state} card={supply_card.get('card')} onClick={onClick}/>
               </span>
             );
           })}
@@ -138,19 +138,19 @@ class App extends React.Component<AppProps, AppState> {
         Events:
         <br/>
         <div>
-          {this.props.state.get('events').toJS().map((event_card, i) => {
+          {this.props.state.get('events').map((event_card, i) => {
             let onClick;
             if (this.props.question && game.isActionQuestion(this.props.question)) {
               onClick = () => {
                 this.props.choice_cb({
                   type: 'event',
-                  cardname: event_card.card.name,
+                  cardname: event_card.get('card').get('name'),
                 } as game.EventChoice);
               }
             }
             return (
               <span key={i}>
-                ${event_card.cost} <CardComponent key={i} state={this.props.state} card={event_card.card} onClick={onClick}/>
+                ${event_card.get('cost')} <CardComponent key={i} state={this.props.state} card={event_card.get('card')} onClick={onClick}/>
               </span>
             );
           })}
@@ -163,7 +163,7 @@ class App extends React.Component<AppProps, AppState> {
                 Draw
             </b>
             <div>
-              {this.props.state.get('draw').toJS().map((card, i) => {
+              {this.props.state.get('draw').map((card, i) => {
                 return (
                   <CardComponent key={i} state={this.props.state} card={card}/>
                 );
@@ -175,7 +175,7 @@ class App extends React.Component<AppProps, AppState> {
                 Hand
             </b>
             <div>
-              {this.props.state.get('hand').toJS().map((card, i) => {
+              {this.props.state.get('hand').map((card, i) => {
                 let onClick;
                 let classNames = [];
                 if (this.props.question) {
@@ -215,7 +215,7 @@ class App extends React.Component<AppProps, AppState> {
                 Discard
             </b>
             <div>
-              {this.props.state.get('discard').toJS().map((card, i) => {
+              {this.props.state.get('discard').map((card, i) => {
                 return (
                   <CardComponent key={i} state={this.props.state} card={card}/>
                 );
@@ -231,7 +231,7 @@ class App extends React.Component<AppProps, AppState> {
             Trash
           </b>
           <div>
-            {this.props.state.get('trash').toJS().map((card, i) => {
+            {this.props.state.get('trash').map((card, i) => {
               return (
                 <CardComponent key={i} state={this.props.state} card={card}/>
               );

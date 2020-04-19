@@ -14,12 +14,17 @@ export type Player = AsyncGenerator<PlayerChoice, PlayerChoice, [GameState, Play
 
 export type Effect = (state: GameState) => Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
 
-export type Card = {
+type RawCard = {
   name: string,
   description: string | ((state: GameState) => string),
   cost_range?: [number, number],
   setup?: (state: GameState) => GameState,
   fn: Effect,
+  energy: number,
+};
+export type Card = Immutable.Record<RawCard>;
+export function make_card(raw: RawCard): Card {
+  return Immutable.Record<RawCard>(raw)();
 }
 export type SupplyCard = Immutable.Record<{
   card: Card, cost: number,
@@ -106,10 +111,11 @@ export function initial_state(seed: number | null): GameState {
   let state: GameState = InitialState();
   const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 10);
   kingdom.forEach((card) => {
-    let cost_range = card.cost_range || [0, 5];
-    if (card.setup) {
+    let cost_range = card.get('cost_range') || [0, 5];
+    let setup = card.get('setup');
+    if (setup) {
       // console.log('setting up', state.get('extra').toJS());
-      state = card.setup(state);
+      state = setup(state);
       // console.log(state.get('extra').toJS());
     }
     state = state.set('supply', state.get('supply').push(
@@ -120,7 +126,7 @@ export function initial_state(seed: number | null): GameState {
   });
   const kingdom_events = random.sample(mt, cards.KINGDOM_EVENTS, 2); // TODO: change to ten?
   kingdom_events.forEach((card) => {
-    let cost_range = card.cost_range || [0, 5];
+    let cost_range = card.get('cost_range') || [0, 5];
     state = state.set('events', state.get('events').push(
       Immutable.Record({
         card: card, cost: random.integer(cost_range[0], cost_range[1])(mt),
@@ -190,7 +196,7 @@ export function draw(state: GameState, ndraw?: number): GameState {
     drawn_cards.push(card);
   }
   if (drawn_cards.length) {
-    let names = (drawn_cards).map((card) => card.name).join(', ');
+    let names = (drawn_cards).map((card) => card.get('name')).join(', ');
     state = state.set('log', state.get('log').push(`Drew ${names}`));
   }
   return state;
@@ -236,7 +242,7 @@ export function play(index: number): Effect {
     if (card === undefined) {
       throw Error(`Tried to play ${index} which does not exist`);
     }
-    state = yield* card.fn(state);
+    state = yield* card.get('fn')(state);
     state = state.set('discard', state.get('discard').push(card));
     return state;
   }
@@ -332,7 +338,7 @@ function trashSupplyCard(state: GameState, cardName: string, type: BuyType): Gam
     if (supplyCard === undefined) {
       throw Error(`Supply card out of bounds ${i}`);
     }
-    if (supplyCard.get('card').name === cardName) {
+    if (supplyCard.get('card').get('name') === cardName) {
       return state.set(type, state.get(type).remove(i));
     }
   }
@@ -350,7 +356,7 @@ function getSupplyCard(state: GameState, cardName: string, type: BuyType): Suppl
     if (supplyCard === undefined) {
       throw Error(`Supply card out of bounds ${i}`);
     }
-    if (supplyCard.get('card').name === cardName) {
+    if (supplyCard.get('card').get('name') === cardName) {
       return supplyCard;
     }
   }
@@ -363,7 +369,7 @@ function setSupplyCardCost(state: GameState, cardName: string, cost: number, typ
     if (supplyCard === undefined) {
       throw Error(`Supply card out of bounds ${i}`);
     }
-    if (supplyCard.get('card').name === cardName) {
+    if (supplyCard.get('card').get('name') === cardName) {
       return state.set(type, state.get(type).set(i, supplyCard.set('cost', cost)));
     }
   }
@@ -404,11 +410,11 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     state = state.set('error', null);
     state = state.set('money', state.get('money') - supply_card.get('cost'));
     // buys increase card costs
-    state = setSupplyCardCost(state, choice.cardname, supply_card.get('cost') + 1, 'supply');
+    // state = setSupplyCardCost(state, choice.cardname, supply_card.get('cost') + 1, 'supply');
     state = state.set('discard', state.get('discard').push(supply_card.get('card')));
     state = state.set('log', state.get('log').push(`Bought a ${choice.cardname}`));
     // buys cost energy too
-    state = state.set('energy', state.get('energy') - 1);
+    // state = state.set('energy', state.get('energy') - 1);
   } else if (isEvent(choice)) {
     const supply_card = getSupplyCard(state, choice.cardname, 'events');
     if (supply_card === null) {
@@ -422,9 +428,9 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     state = state.set('error', null);
     state = state.set('money', state.get('money') - supply_card.get('cost'));
     state = state.set('log', state.get('log').push(`Bought a ${choice.cardname}`));
-    state = await applyEffect(state, supply_card.get('card').fn, player);
+    state = await applyEffect(state, supply_card.get('card').get('fn'), player);
     // buys cost energy too
-    state = state.set('energy', state.get('energy') - 1);
+    state = state.set('energy', state.get('energy') - supply_card.get('card').get('energy'));
   } else if (isPlay(choice)) {
     let play_choice: PlayChoice = (choice as PlayChoice);
     let card = state.get('hand').get(play_choice.index);
@@ -433,9 +439,9 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
       return state
     }
     state = state.set('error', null);
-    state = state.set('log', state.get('log').push(`Played a ${card.name}`));
+    state = state.set('log', state.get('log').push(`Played a ${card.get('name')}`));
     state = await applyEffect(state, play(play_choice.index), player);
-    state = state.set('energy', state.get('energy') - 1);
+    state = state.set('energy', state.get('energy') - card.get('energy'));
   } else {
     state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));
   }

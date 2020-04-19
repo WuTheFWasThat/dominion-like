@@ -22,15 +22,12 @@ class CardComponent extends React.Component<Props, State> {
   render() {
     let classNames = (this.props.classNames || []).slice();
     classNames.push("card");
-    let description: string;
-    if (typeof this.props.card.description === "string") {
-      description = this.props.card.description;
-    } else {
-      description = this.props.card.description(this.props.state);
-    }
+    let card_desc = this.props.card.get('description');
+    let description: string = (typeof card_desc === "string") ?  card_desc : card_desc(this.props.state);
     return (
-      <div className={classNames.join(" ")} onClick={this.props.onClick}>
-        <div style={{cursor: 'default'}} data-tip={description}>{this.props.card.name}</div>
+      <div className={classNames.join(" ")} onClick={this.props.onClick} data-tip={description}>
+        <div className="center" style={{cursor: 'default'}}>{this.props.card.get('name')}</div>
+        <div className="center">{this.props.card.get('energy')} <i className="fa fa-bolt"></i></div>
         <ReactTooltip />
       </div>
 

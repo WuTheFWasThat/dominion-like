@@ -7,3 +7,7 @@
 .card.selected {
   border: 2px solid black;
 }
+
+.center {
+  text-align: center;
+}
