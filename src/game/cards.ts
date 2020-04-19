@@ -1,4 +1,4 @@
-import { Card, GameState, draw, discard, trash, trash_event, gain } from  './core';
+import { Card, GameState, draw, discard, trash, trash_event, gain, play } from  './core';
 import * as game from  './core';
 
 /* eslint-disable require-yield */
@@ -159,6 +159,15 @@ export const ThroneRoom: Card = register_kingdom_card({
       console.log(choice.indices);
       throw Error('Something went wrong');
     }
+    let index: number = choice.indices[0];
+    let card = state.get('hand').get(index);
+    if (card === undefined) {
+      throw Error(`Tried to play ${index} which does not exist`);
+    }
+    state = state.set('hand', state.get('hand').remove(index));
+    state = yield* card.fn(state);
+    state = yield* card.fn(state);
+    state = state.set('discard', state.get('discard').push(card));
     return state;
   }
 });
