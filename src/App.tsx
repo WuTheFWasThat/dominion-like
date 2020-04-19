@@ -117,7 +117,7 @@ class App extends React.Component<AppProps, AppState> {
             }
             return (
               <span key={i}>
-                ${supply_card.cost} <CardComponent key={i} card={supply_card.card} onClick={onClick}/>
+                ${supply_card.cost} <CardComponent key={i} state={this.props.state} card={supply_card.card} onClick={onClick}/>
               </span>
             );
           })}
@@ -139,7 +139,7 @@ class App extends React.Component<AppProps, AppState> {
             }
             return (
               <span key={i}>
-                ${event_card.cost} <CardComponent key={i} card={event_card.card} onClick={onClick}/>
+                ${event_card.cost} <CardComponent key={i} state={this.props.state} card={event_card.card} onClick={onClick}/>
               </span>
             );
           })}
@@ -152,7 +152,7 @@ class App extends React.Component<AppProps, AppState> {
             <div>
               {this.props.state.get('draw').toJS().map((card, i) => {
                 return (
-                  <CardComponent key={i} card={card}/>
+                  <CardComponent key={i} state={this.props.state} card={card}/>
                 );
               })}
             </div>
@@ -190,7 +190,7 @@ class App extends React.Component<AppProps, AppState> {
                   }
                 }
                 return (
-                  <CardComponent classNames={classNames} card={card} key={i} onClick={onClick}/>
+                  <CardComponent classNames={classNames} state={this.props.state} card={card} key={i} onClick={onClick}/>
                 );
               })}
             </div>
@@ -200,7 +200,7 @@ class App extends React.Component<AppProps, AppState> {
             <div>
               {this.props.state.get('discard').toJS().map((card, i) => {
                 return (
-                  <CardComponent key={i} card={card}/>
+                  <CardComponent key={i} state={this.props.state} card={card}/>
                 );
               })}
             </div>
@@ -214,7 +214,7 @@ class App extends React.Component<AppProps, AppState> {
           <div>
             {this.props.state.get('trash').toJS().map((card, i) => {
               return (
-                <CardComponent key={i} card={card}/>
+                <CardComponent key={i} state={this.props.state} card={card}/>
               );
             })}
           </div>

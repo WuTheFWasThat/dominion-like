@@ -16,8 +16,9 @@ export type Effect = (state: GameState) => Generator<[GameState, PlayerQuestion 
 
 export type Card = {
   name: string,
-  description: string,
+  description: string | ((state: GameState) => string),
   cost_range?: [number, number],
+  setup?: (state: GameState) => GameState,
   fn: Effect,
 }
 export type SupplyCard = Immutable.Record<{
@@ -39,7 +40,7 @@ export type GameState = Immutable.Record<{
   supply: Immutable.List<SupplyCard>,
   events: Immutable.List<SupplyCard>,
   situations: Immutable.List<Card>,
-  extra: any,
+  extra: Immutable.Map<string, any>,
   random: random.Engine,
   error: null | string,
   previous: null | GameState,
@@ -87,7 +88,7 @@ export const InitialState = Immutable.Record({
   hand: Immutable.List([]),
   trash: Immutable.List([]),
   situations: Immutable.List([]),
-  extra: {},
+  extra: Immutable.Map<string, any>([]),
   random: null as any,
   error: null,
   previous: null,
@@ -99,6 +100,11 @@ export function initial_state(seed: number | null): GameState {
   const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 3); // TODO: change to ten?
   kingdom.forEach((card) => {
     let cost_range = card.cost_range || [0, 5];
+    if (card.setup) {
+      // console.log('setting up', state.get('extra').toJS());
+      state = card.setup(state);
+      // console.log(state.get('extra').toJS());
+    }
     state = state.set('supply', state.get('supply').push(
       Immutable.Record({
         card: card, cost: random.integer(cost_range[0], cost_range[1])(mt),

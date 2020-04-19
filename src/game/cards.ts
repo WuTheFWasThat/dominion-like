@@ -20,9 +20,14 @@ function register_kingdom_event(card: Card) {
 
 export const Copper: Card = {
   name: 'Copper',
-  description: '+$1',
+  description: (state: GameState) => {
+    let amt = 1 + (state.get('extra').get('coppersmith_plays') || 0);
+    return '+$' + amt;
+  },
   fn: function* (state: GameState) {
-    return state.set('money', state.get('money') + 1);
+    console.log(state.get('extra').toJS());
+    let amt = 1 + (state.get('extra').get('coppersmith_plays') || 0);
+    return state.set('money', state.get('money') + amt);
   }
 };
 
@@ -56,7 +61,7 @@ export const Duchy: Card = {
   name: 'Duchy',
   description: '+2 victory points',
   fn: function* (state: GameState) {
-    return state.set('victory', state.get('victory') + 1);
+    return state.set('victory', state.get('victory') + 2);
   }
 };
 
@@ -65,7 +70,7 @@ export const Province: Card = {
   name: 'Province',
   description: '+3 victory points',
   fn: function* (state: GameState) {
-    return state.set('victory', state.get('victory') + 1);
+    return state.set('victory', state.get('victory') + 3);
   }
 };
 
@@ -116,6 +121,23 @@ export const Chapel: Card = register_kingdom_card({
     return state;
   }
 });
+
+export const Coppersmith: Card = register_kingdom_card({
+  name: 'Coppersmith',
+  description: 'All coppers give an additional $1',
+  setup: function(state: GameState) {
+    state = state.set('extra', state.get('extra').set('coppersmith_plays', 0));
+      console.log('set state', state);
+      console.log('set state', state.get('extra').toJS());
+    return state;
+  },
+  fn: function* (state: GameState) {
+    let extra = state.get('extra');
+    state = state.set('extra', extra.set('coppersmith_plays', extra.get('coppersmith_plays') + 1));
+    return state;
+  }
+});
+
 
 export const Reboot: Card = {
   name: 'Reboot',
