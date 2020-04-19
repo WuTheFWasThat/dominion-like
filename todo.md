@@ -12,3 +12,5 @@ energy costs per card
   - lab too good
 should buys really cost energy?
   - reboot should though
+
+implement a log

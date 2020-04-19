@@ -46,7 +46,7 @@ async function render() {
     }
   }
 
-  let state = game.initial_state(parseInt(query_dict.seed || '0'));
+  let state = game.initial_state(query_dict.seed === undefined ? null : parseInt(query_dict.seed));
   const UIPlayer = makeUIPlayer();
   game.run(state, UIPlayer);
 }

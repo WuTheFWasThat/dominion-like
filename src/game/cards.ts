@@ -236,11 +236,47 @@ export const Recruit: Card = register_kingdom_event({
 
 export const SolarPower: Card = register_kingdom_event({
   name: 'Solar Power',
-  cost_range: [10, 25],
-  description: 'Once per game, +10 energy',
+  cost_range: [16, 32],
+  description: 'Once per game, +16 energy',
   fn: function* (state: GameState) {
     state = trash_event(state, 'Solar Power');
     state = state.set('energy', state.get('energy') + 10);
     return state;
   }
+});
+
+export const Efficiency: Card = register_kingdom_event({
+  name: 'Efficiency',
+  cost_range: [32, 64],
+  description: 'Once per game, double energy',
+  fn: function* (state: GameState) {
+    state = trash_event(state, 'Efficiency');
+    state = state.set('energy', state.get('energy') * 2);
+    return state;
+  }
+});
+
+export const Overtime: Card = register_kingdom_event({
+  name: 'Overtime',
+  cost_range: [10, 25],
+  description: 'Once per game, gain energy equal to the number of cards in your hand',
+  fn: function* (state: GameState) {
+    state = trash_event(state, 'Overtime');
+    state = state.set('energy', state.get('energy') + state.get('hand').size);
+    return state;
+  }
+});
+
+export const Greed: Card = register_kingdom_event({
+  name: 'Greed',
+  cost_range: [10, 25],
+  description: 'At the end of the game, gain one victory point per $ you have.',
+  fn: function* (state: GameState) {
+    state = trash_event(state, 'Greed');
+    function* end_hook(state: GameState) {
+      return state.set('victory', state.get('victory') + state.get('money'));
+    }
+    state = state.set('end_hooks', state.get('end_hooks').push(end_hook));
+    return state;
+  },
 });

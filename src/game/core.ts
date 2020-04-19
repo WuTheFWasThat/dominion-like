@@ -40,6 +40,7 @@ export type GameState = Immutable.Record<{
   supply: Immutable.List<SupplyCard>,
   events: Immutable.List<SupplyCard>,
   situations: Immutable.List<Card>,
+  end_hooks: Immutable.List<Effect>,
   extra: Immutable.Map<string, any>,
   random: random.MersenneTwister19937,
   seed: number,
@@ -89,6 +90,7 @@ export const InitialState = Immutable.Record({
   hand: Immutable.List([]),
   trash: Immutable.List([]),
   situations: Immutable.List([]),
+  end_hooks: Immutable.List([]),
   extra: Immutable.Map<string, any>([]),
   random: null as any,
   seed: 0,
@@ -455,6 +457,14 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
     state = state.set('previous', prevstate);
   }
   state = state.set('ended', true);
+  let hooks = state.get('end_hooks');
+  for (let i = 0; i < hooks.size; i++) {
+    let hook = hooks.get(i);
+    if (hook === undefined) {
+      throw Error(`Unexpected undefined hook ${i}`);
+    }
+    state = await applyEffect(state, hook, player);
+  }
   await player.next([state, null]); // to let them render final state
   return history;
 }
