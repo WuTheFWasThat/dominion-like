@@ -41,6 +41,7 @@ export type GameState = Immutable.Record<{
   events: Immutable.List<SupplyCard>,
   situations: Immutable.List<Card>,
   end_hooks: Immutable.List<Effect>,
+  log: Immutable.List<string>,
   extra: Immutable.Map<string, any>,
   random: random.MersenneTwister19937,
   seed: number,
@@ -91,6 +92,7 @@ export const InitialState = Immutable.Record({
   trash: Immutable.List([]),
   situations: Immutable.List([]),
   end_hooks: Immutable.List([]),
+  log: Immutable.List([]),
   extra: Immutable.Map<string, any>([]),
   random: null as any,
   seed: 0,
@@ -177,16 +179,21 @@ export function draw(state: GameState, ndraw?: number): GameState {
   if (ndraw === undefined) {
     ndraw = 1;
   }
-  if (ndraw === 0) {
-    return state;
+  const drawn_cards = [];
+  for (let i = 0; i < ndraw; i++) {
+    let card;
+    [state, card] = scry(state);
+    if (card === null) {
+      continue;
+    }
+    state = state.set('hand', state.get('hand').push(card));
+    drawn_cards.push(card);
   }
-  let card;
-  [state, card] = scry(state);
-  if (card === null) {
-    return state;
+  if (drawn_cards.length) {
+    let names = (drawn_cards).map((card) => card.name).join(', ');
+    state = state.set('log', state.get('log').push(`Drew ${names}`));
   }
-  state = state.set('hand', state.get('hand').push(card));
-  return draw(state, ndraw - 1);
+  return state;
 }
 
 export function discard(state: GameState, index: number): GameState {
@@ -399,6 +406,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     // buys increase card costs
     state = setSupplyCardCost(state, choice.cardname, supply_card.get('cost') + 1, 'supply');
     state = state.set('discard', state.get('discard').push(supply_card.get('card')));
+    state = state.set('log', state.get('log').push(`Bought a ${choice.cardname}`));
     // buys cost energy too
     state = state.set('energy', state.get('energy') - 1);
   } else if (isEvent(choice)) {
@@ -413,6 +421,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     }
     state = state.set('error', null);
     state = state.set('money', state.get('money') - supply_card.get('cost'));
+    state = state.set('log', state.get('log').push(`Bought a ${choice.cardname}`));
     state = await applyEffect(state, supply_card.get('card').fn, player);
     // buys cost energy too
     state = state.set('energy', state.get('energy') - 1);
@@ -424,6 +433,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
       return state
     }
     state = state.set('error', null);
+    state = state.set('log', state.get('log').push(`Played a ${card.name}`));
     state = await applyEffect(state, play(play_choice.index), player);
     state = state.set('energy', state.get('energy') - 1);
   } else {

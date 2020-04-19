@@ -159,7 +159,9 @@ class App extends React.Component<AppProps, AppState> {
 
         <div style={{display: "flex", flexDirection: "row", width: '100%'}}>
           <div style={{flexBasis: '33%', flexGrow: 0}}>
-            Draw
+            <b>
+                Draw
+            </b>
             <div>
               {this.props.state.get('draw').toJS().map((card, i) => {
                 return (
@@ -169,7 +171,9 @@ class App extends React.Component<AppProps, AppState> {
             </div>
           </div>
           <div style={{flexBasis: '33%', flexGrow: 0}}>
-            Hand
+            <b>
+                Hand
+            </b>
             <div>
               {this.props.state.get('hand').toJS().map((card, i) => {
                 let onClick;
@@ -207,7 +211,9 @@ class App extends React.Component<AppProps, AppState> {
             </div>
           </div>
           <div style={{flexBasis: '33%', flexGrow: 0}}>
-            Discard
+            <b>
+                Discard
+            </b>
             <div>
               {this.props.state.get('discard').toJS().map((card, i) => {
                 return (
@@ -221,7 +227,9 @@ class App extends React.Component<AppProps, AppState> {
         <br/>
 
         <div>
-          Trash
+          <b>
+            Trash
+          </b>
           <div>
             {this.props.state.get('trash').toJS().map((card, i) => {
               return (
@@ -231,6 +239,21 @@ class App extends React.Component<AppProps, AppState> {
           </div>
         </div>
 
+
+        <div>
+          <b>
+            History (reversed)
+          </b>
+          <div>
+            {this.props.state.get('log').toJS().reverse().map((msg, i) => {
+              return (
+                <div key={i}>
+                    {msg}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     );
   }

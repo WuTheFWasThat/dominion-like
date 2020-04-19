@@ -204,9 +204,7 @@ export const Reboot: Card = {
     for (let i = 0; i < n; i++) {
       state = discard(state, 0);
     }
-    for (let i = 0; i < 5; i++) {
-      state = draw(state);
-    }
+    state = draw(state, 5);
     return state;
   }
 };
