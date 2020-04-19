@@ -1,4 +1,4 @@
-import { Card, GameState, draw, discard, trash, trash_event, gain, play, scry } from  './core';
+import { Card, GameState, draw, discard, trash, trash_event, gain, scry } from  './core';
 import * as game from  './core';
 
 /* eslint-disable require-yield */

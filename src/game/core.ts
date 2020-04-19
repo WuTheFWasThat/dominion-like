@@ -12,15 +12,14 @@ export type PlayerChoice = {
 };
 export type Player = AsyncGenerator<PlayerChoice, PlayerChoice, [GameState, PlayerQuestion | null]>;
 
-export type Effect = Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
-export type EffectFn = (state: GameState) => Effect;
+export type Effect = (state: GameState) => Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
 
 export type Card = {
   name: string,
   description: string | ((state: GameState) => string),
   cost_range?: [number, number],
   setup?: (state: GameState) => GameState,
-  fn: EffectFn,
+  fn: Effect,
 }
 export type SupplyCard = Immutable.Record<{
   card: Card, cost: number,
@@ -96,7 +95,7 @@ export const InitialState = Immutable.Record({
 });
 
 export function initial_state(seed: number | null): GameState {
-  const mt = random.MersenneTwister19937.seed(seed || random.createEntropy()[0]);
+  const mt = random.MersenneTwister19937.seed(seed === null ? random.createEntropy()[0] : seed);
   let state: GameState = InitialState();
   const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 10);
   kingdom.forEach((card) => {
@@ -181,7 +180,8 @@ export function discard(state: GameState, index: number): GameState {
 
 export function trash(state: GameState, indices: Array<number>, type: DeckType): GameState {
   indices = indices.slice().sort();
-  for (let index = indices.length -1; index >= 0; index--) {
+  for (let i = indices.length -1; i >= 0; i--) {
+    let index = indices[i];
     let card = state.get(type).get(index);
     if (card === undefined) {
       throw Error(`${type} card out of bounds ${index}`);
@@ -201,15 +201,17 @@ export function gain(state: GameState, cardName: string): GameState {
   return state;
 }
 
-export function* play(state: GameState, index: number): Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice> {
-  let card = state.get('hand').get(index);
-  state = state.set('hand', state.get('hand').remove(index));
-  if (card === undefined) {
-    throw Error(`Tried to play ${index} which does not exist`);
+export function play(index: number): Effect {
+  return function*(state: GameState) {
+    let card = state.get('hand').get(index);
+    state = state.set('hand', state.get('hand').remove(index));
+    if (card === undefined) {
+      throw Error(`Tried to play ${index} which does not exist`);
+    }
+    state = yield* card.fn(state);
+    state = state.set('discard', state.get('discard').push(card));
+    return state;
   }
-  state = yield* card.fn(state);
-  state = state.set('discard', state.get('discard').push(card));
-  return state;
 }
 
 export interface NoChoice extends PlayerChoice {
@@ -280,13 +282,22 @@ export interface PickSupplyChoice extends PlayerChoice {
 
 
 
-export async function applyEffect(state: GameState, effect: Effect, player: Player) {
-  let result = await effect.next(null as any);  // hmm
+export async function applyEffect(state: GameState, effect: Effect, player: Player): Promise<GameState> {
+  console.log('ebeginning effect');
+  let init_state = state;
+  let gen = effect(state)
+  let result = await gen.next(null as any);  // hmm
   while (!result.done) {
-    state = result.value[0];
-    let question = result.value[1];
+    let question;
+    [state, question] = result.value;
+    console.log('getting choice');
     let choice = (await player.next([state, question])).value;
-    result = await effect.next(choice);
+    if (isUndo(choice)) {
+      console.log('undoing', choice);
+      return await applyEffect(init_state, effect, player);
+    }
+    console.log('calling gen', choice);
+    result = await gen.next(choice);
   }
   return result.value;
 }
@@ -385,7 +396,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     }
     state = state.set('error', null);
     state = state.set('money', state.get('money') - supply_card.get('cost'));
-    state = await applyEffect(state, supply_card.get('card').fn(state), player);
+    state = await applyEffect(state, supply_card.get('card').fn, player);
     // buys cost energy too
     state = state.set('energy', state.get('energy') - 1);
   } else if (isPlay(choice)) {
@@ -396,7 +407,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
       return state
     }
     state = state.set('error', null);
-    state = await applyEffect(state, play(state, play_choice.index), player);
+    state = await applyEffect(state, play(play_choice.index), player);
     state = state.set('energy', state.get('energy') - 1);
   } else {
     state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));
