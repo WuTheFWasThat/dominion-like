@@ -41,7 +41,8 @@ export type GameState = Immutable.Record<{
   events: Immutable.List<SupplyCard>,
   situations: Immutable.List<Card>,
   extra: Immutable.Map<string, any>,
-  random: random.Engine,
+  random: random.MersenneTwister19937,
+  seed: number,
   error: null | string,
   previous: null | GameState,
 }>;
@@ -90,12 +91,14 @@ export const InitialState = Immutable.Record({
   situations: Immutable.List([]),
   extra: Immutable.Map<string, any>([]),
   random: null as any,
+  seed: 0,
   error: null,
   previous: null,
 });
 
 export function initial_state(seed: number | null): GameState {
-  const mt = random.MersenneTwister19937.seed(seed === null ? random.createEntropy()[0] : seed);
+  let actual_seed = seed === null ? random.createEntropy()[0] : seed;
+  const mt = random.MersenneTwister19937.seed(actual_seed);
   let state: GameState = InitialState();
   const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 10);
   kingdom.forEach((card) => {
@@ -128,8 +131,23 @@ export function initial_state(seed: number | null): GameState {
   // state = state.set('money', 100);
 
   state = state.set('energy', 32);
+  state = state.set('seed', actual_seed);
   return state.set('random', mt);
 }
+
+function cloneRandom(state: GameState) {
+  return random.MersenneTwister19937.seed(state.get('seed')).discard(
+    state.get('random').getUseCount()
+  )
+}
+
+function consumeRandom<T>(state: GameState, fn: (r: random.MersenneTwister19937) => T): [GameState, T] {
+  let new_random = cloneRandom(state);
+  let result: T = fn(new_random);
+  state = state.set('random', new_random);
+  return [state, result];
+}
+
 
 export function scry(state: GameState): [GameState, Card | null] {
   // get a card from the deck, but just return it (with new deck state)
@@ -143,7 +161,8 @@ export function scry(state: GameState): [GameState, Card | null] {
     // nothing to draw
     return [state, null]
   }
-  const i = random.integer(0, n-1)(state.get('random'));
+  let i;
+  [state, i] = consumeRandom(state, random.integer(0, n-1));
   let drawn = state.get('draw').get(i);
   if (drawn === undefined) {
     throw Error(`Unable to draw? ${n} ${i}`)
