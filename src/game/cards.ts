@@ -114,10 +114,25 @@ export const Peddler: Card = register_kingdom_card({
 
 export const Lab: Card = register_kingdom_card({
   name: 'Lab',
-  description: '+2 card, +1 energy',
+  description: '+2 card, play a card from your hand',
   fn: function* (state: GameState) {
-    state = state.set('energy', state.get('energy') + 1);
-    return draw(state, 2);
+    // state = state.set('energy', state.get('energy') + 1);
+    state = draw(state, 2);
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to play for lab'}]) as game.PickHandChoice;
+    if (choice.indices.length === 0) {
+      return state;
+    } else if (choice.indices.length > 1) {
+      throw Error('Something went wrong');
+    }
+    let index: number = choice.indices[0];
+    let card = state.get('hand').get(index);
+    if (card === undefined) {
+      throw Error(`Tried to play ${index} which does not exist`);
+    }
+    state = state.set('hand', state.get('hand').remove(index));
+    state = yield* card.fn(state);
+    state = state.set('discard', state.get('discard').push(card));
+    return state;
   }
 });
 

@@ -1,4 +1,3 @@
-- display energy costs?
 - think about infinites
 - add more events
 - implement play area?
@@ -9,6 +8,11 @@
   - implement card that gives N VP if N copies in hand
 
 energy costs per card
-  - lab too good
+  - display energy costs?
+
 should buys really cost energy?
   - reboot should though
+
+convert energy to money
+give +$1 per discard
+card that gives +1 card per discard
