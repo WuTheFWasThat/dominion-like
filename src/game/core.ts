@@ -413,7 +413,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     // state = setSupplyCardCost(state, choice.cardname, supply_card.get('cost') + 1, 'supply');
     state = state.set('discard', state.get('discard').push(supply_card.get('card')));
     state = state.set('log', state.get('log').push(`Bought a ${choice.cardname}`));
-    // buys cost energy too
+    // buys cost energy too?
     // state = state.set('energy', state.get('energy') - 1);
   } else if (isEvent(choice)) {
     const supply_card = getSupplyCard(state, choice.cardname, 'events');
@@ -423,6 +423,10 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     }
     if (state.get('money') < supply_card.get('cost')) {
       state = state.set('error', 'Not enough money');
+      return state;
+    }
+    if (state.get('energy') < supply_card.get('card').get('energy')) {
+      state = state.set('error', 'Not enough energy');
       return state;
     }
     state = state.set('error', null);
@@ -437,6 +441,10 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     if (card === undefined) {
       state = state.set('error', 'Bad card');
       return state
+    }
+    if (state.get('energy') < card.get('energy')) {
+      state = state.set('error', 'Not enough energy');
+      return state;
     }
     state = state.set('error', null);
     state = state.set('log', state.get('log').push(`Played a ${card.get('name')}`));

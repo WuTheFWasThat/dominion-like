@@ -27,3 +27,5 @@ all-for-one card that draws everything zero cost
 implement situations
 
 coppersmith change to increase only coppers in hand
+
+rats
