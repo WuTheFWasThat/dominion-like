@@ -49,6 +49,8 @@ class App extends React.Component<AppProps, AppState> {
         instruction_text = 'Play or buy a card!';
       } else if (game.isPickHandQuestion(this.props.question)) {
         instruction_text = this.props.question.message;
+      } else if (game.isPickSupplyQuestion(this.props.question)) {
+        instruction_text = this.props.question.message;
       } else {
         console.log(this.props.question);
         throw new Error('Unhandled question');
@@ -107,12 +109,21 @@ class App extends React.Component<AppProps, AppState> {
         <div>
           {this.props.state.get('supply').toJS().map((supply_card, i) => {
             let onClick;
-            if (this.props.question && game.isActionQuestion(this.props.question)) {
-              onClick = () => {
-                this.props.choice_cb({
-                  type: 'buy',
-                  cardname: supply_card.card.name,
-                } as game.BuyChoice);
+            if (this.props.question) {
+              if (game.isActionQuestion(this.props.question)) {
+                onClick = () => {
+                  this.props.choice_cb({
+                    type: 'buy',
+                    cardname: supply_card.card.name,
+                  } as game.BuyChoice);
+                }
+              } else if (game.isPickSupplyQuestion(this.props.question)) {
+                onClick = () => {
+                  this.props.choice_cb({
+                    type: 'picksupply',
+                    cardname: supply_card.card.name,
+                  } as game.PickSupplyChoice);
+                }
               }
             }
             return (

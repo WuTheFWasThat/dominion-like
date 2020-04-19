@@ -1,4 +1,4 @@
-import { Card, GameState, draw, discard, trash, trash_event } from  './core';
+import { Card, GameState, draw, discard, trash, trash_event, gain } from  './core';
 import * as game from  './core';
 
 /* eslint-disable require-yield */
@@ -85,6 +85,16 @@ export const Gardens: Card = register_kingdom_card({
 });
 
 
+export const Workshop: Card = register_kingdom_card({
+  name: 'Workshop',
+  description: 'Gain a card from the card supply pile',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'picksupply', message: 'Pick card to gain for Workshop'}]) as game.PickSupplyChoice;
+    return gain(state, choice.cardname);
+  }
+});
+
+
 export const Smithy: Card = register_kingdom_card({
   name: 'Smithy',
   description: '+3 cards',
@@ -114,7 +124,7 @@ export const Lab: Card = register_kingdom_card({
 
 export const Chapel: Card = register_kingdom_card({
   name: 'Chapel',
-  description: 'Trash a card from your hand',
+  description: 'Trash any number of cards from your hand',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
     state = trash(state, choice.indices, 'hand');

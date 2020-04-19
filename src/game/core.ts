@@ -180,6 +180,16 @@ export function trash(state: GameState, indices: Array<number>, type: DeckType):
   return state;
 }
 
+export function gain(state: GameState, cardName: string): GameState {
+  let supply_card = getSupplyCard(state, cardName, 'supply');
+  if (supply_card === null) {
+    throw Error(`Tried to gain ${cardName} which does not exist`);
+  }
+  state = state.set('discard', state.get('discard').push(supply_card.get('card')));
+  return state;
+}
+
+
 export interface NoChoice extends PlayerChoice {
   type: 'no'
 };
@@ -232,6 +242,18 @@ export function isPickHandQuestion(q: PlayerQuestion): q is PickHandQuestion {
 export interface PickHandChoice extends PlayerChoice {
   type: 'pickhand',
   indices: Array<number>,
+};
+
+export interface PickSupplyQuestion extends PlayerQuestion {
+  type: 'picksupply',
+  message: string,
+};
+export function isPickSupplyQuestion(q: PlayerQuestion): q is PickSupplyQuestion {
+    return q.type === 'picksupply';
+}
+export interface PickSupplyChoice extends PlayerChoice {
+  type: 'picksupply',
+  cardname: string,
 };
 
 
