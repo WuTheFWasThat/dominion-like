@@ -189,6 +189,16 @@ export function gain(state: GameState, cardName: string): GameState {
   return state;
 }
 
+export async function play(state: GameState, index: number, player: Player): Promise<GameState> {
+  let card = state.get('hand').get(index);
+  state = state.set('hand', state.get('hand').remove(index));
+  if (card === undefined) {
+    throw Error(`Tried to play ${index} which does not exist`);
+  }
+  state = await applyEffect(state, card.fn, player);
+  state = state.set('discard', state.get('discard').push(card));
+  return state;
+}
 
 export interface NoChoice extends PlayerChoice {
   type: 'no'
@@ -255,6 +265,7 @@ export interface PickSupplyChoice extends PlayerChoice {
   type: 'picksupply',
   cardname: string,
 };
+
 
 
 export async function applyEffect(state: GameState, effect: Effect, player: Player) {
@@ -367,16 +378,14 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     // buys cost energy too
     state = state.set('energy', state.get('energy') - 1);
   } else if (isPlay(choice)) {
-    let play: PlayChoice = (choice as PlayChoice);
-    let card = state.get('hand').get(play.index);
+    let play_choice: PlayChoice = (choice as PlayChoice);
+    let card = state.get('hand').get(play_choice.index);
     if (card === undefined) {
       state = state.set('error', 'Bad card');
       return state
     }
     state = state.set('error', null);
-    state = state.set('hand', state.get('hand').remove(play.index));
-    state = await applyEffect(state, card.fn, player);
-    state = state.set('discard', state.get('discard').push(card));
+    state = await play(state, play_choice.index, player);
     state = state.set('energy', state.get('energy') - 1);
   } else {
     state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));

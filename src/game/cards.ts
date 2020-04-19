@@ -148,6 +148,21 @@ export const Coppersmith: Card = register_kingdom_card({
   }
 });
 
+export const ThroneRoom: Card = register_kingdom_card({
+  name: 'Throne Room',
+  description: 'Play a card from your hand twice',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to play for Throne Room'}]) as game.PickHandChoice;
+    if (choice.indices.length === 0) {
+      return state;
+    } else if (choice.indices.length > 1) {
+      console.log(choice.indices);
+      throw Error('Something went wrong');
+    }
+    return state;
+  }
+});
+
 
 export const Reboot: Card = {
   name: 'Reboot',
