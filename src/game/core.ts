@@ -98,7 +98,7 @@ export const InitialState = Immutable.Record({
 export function initial_state(seed: number | null): GameState {
   const mt = random.MersenneTwister19937.seed(seed || random.createEntropy()[0]);
   let state: GameState = InitialState();
-  const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 3); // TODO: change to ten?
+  const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 10);
   kingdom.forEach((card) => {
     let cost_range = card.cost_range || [0, 5];
     if (card.setup) {
@@ -112,7 +112,7 @@ export function initial_state(seed: number | null): GameState {
       })()
     ));
   });
-  const kingdom_events = random.sample(mt, cards.KINGDOM_EVENTS, 1); // TODO: change to ten?
+  const kingdom_events = random.sample(mt, cards.KINGDOM_EVENTS, 2); // TODO: change to ten?
   kingdom_events.forEach((card) => {
     let cost_range = card.cost_range || [0, 5];
     state = state.set('events', state.get('events').push(
@@ -132,13 +132,9 @@ export function initial_state(seed: number | null): GameState {
   return state.set('random', mt);
 }
 
-export function draw(state: GameState, ndraw?: number): GameState {
-  if (ndraw === undefined) {
-    ndraw = 1;
-  }
-  if (ndraw === 0) {
-    return state;
-  }
+export function scry(state: GameState): [GameState, Card | null] {
+  // get a card from the deck, but just return it (with new deck state)
+  // caller should then do something with the card
   if (state.get('draw').size === 0) {
     state = state.set('draw', state.get('discard'));
     state = state.set('discard', Immutable.List());
@@ -146,7 +142,7 @@ export function draw(state: GameState, ndraw?: number): GameState {
   const n = state.get('draw').size;
   if (n === 0) {
     // nothing to draw
-    return state
+    return [state, null]
   }
   const i = random.integer(0, n-1)(state.get('random'));
   let drawn = state.get('draw').get(i);
@@ -154,7 +150,22 @@ export function draw(state: GameState, ndraw?: number): GameState {
     throw Error(`Unable to draw? ${n} ${i}`)
   }
   state = state.set('draw', state.get('draw').delete(i));
-  state = state.set('hand', state.get('hand').push(drawn));
+  return [state, drawn]
+}
+
+export function draw(state: GameState, ndraw?: number): GameState {
+  if (ndraw === undefined) {
+    ndraw = 1;
+  }
+  if (ndraw === 0) {
+    return state;
+  }
+  let card;
+  [state, card] = scry(state);
+  if (card === null) {
+    return state;
+  }
+  state = state.set('hand', state.get('hand').push(card));
   return draw(state, ndraw - 1);
 }
 

@@ -1,4 +1,4 @@
-import { Card, GameState, draw, discard, trash, trash_event, gain, play } from  './core';
+import { Card, GameState, draw, discard, trash, trash_event, gain, play, scry } from  './core';
 import * as game from  './core';
 
 /* eslint-disable require-yield */
@@ -132,6 +132,17 @@ export const Chapel: Card = register_kingdom_card({
   }
 });
 
+export const Library: Card = register_kingdom_card({
+  name: 'Library',
+  description: 'Draw until you have seven cards',
+  fn: function* (state: GameState) {
+    while (state.get('hand').size < 7) {
+      state = draw(state, 1);
+    }
+    return state;
+  }
+});
+
 export const Coppersmith: Card = register_kingdom_card({
   name: 'Coppersmith',
   description: 'All coppers give an additional $1',
@@ -166,6 +177,22 @@ export const ThroneRoom: Card = register_kingdom_card({
     }
     state = state.set('hand', state.get('hand').remove(index));
     state = yield* card.fn(state);
+    state = yield* card.fn(state);
+    state = state.set('discard', state.get('discard').push(card));
+    return state;
+  }
+});
+
+export const Vassal: Card = register_kingdom_card({
+  name: 'Vassal',
+  description: '+$2, play the top card of your draw',
+  fn: function* (state: GameState) {
+    state = state.set('money', state.get('money') + 2);
+    let card;
+    [state, card] = scry(state);
+    if (card === null) {
+      return state;
+    }
     state = yield* card.fn(state);
     state = state.set('discard', state.get('discard').push(card));
     return state;
