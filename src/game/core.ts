@@ -302,20 +302,16 @@ export interface PickSupplyChoice extends PlayerChoice {
 
 
 export async function applyEffect(state: GameState, effect: Effect, player: Player): Promise<GameState> {
-  console.log('ebeginning effect');
   let init_state = state;
   let gen = effect(state)
   let result = await gen.next(null as any);  // hmm
   while (!result.done) {
     let question;
     [state, question] = result.value;
-    console.log('getting choice');
     let choice = (await player.next([state, question])).value;
     if (isUndo(choice)) {
-      console.log('undoing', choice);
       return await applyEffect(init_state, effect, player);
     }
-    console.log('calling gen', choice);
     result = await gen.next(choice);
   }
   return result.value;

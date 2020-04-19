@@ -25,7 +25,6 @@ export const Copper: Card = {
     return '+$' + amt;
   },
   fn: function* (state: GameState) {
-    console.log(state.get('extra').toJS());
     let amt = 1 + (state.get('extra').get('coppersmith_plays') || 0);
     return state.set('money', state.get('money') + amt);
   }
@@ -148,8 +147,6 @@ export const Coppersmith: Card = register_kingdom_card({
   description: 'All coppers give an additional $1',
   setup: function(state: GameState) {
     state = state.set('extra', state.get('extra').set('coppersmith_plays', 0));
-      console.log('set state', state);
-      console.log('set state', state.get('extra').toJS());
     return state;
   },
   fn: function* (state: GameState) {
@@ -167,7 +164,6 @@ export const ThroneRoom: Card = register_kingdom_card({
     if (choice.indices.length === 0) {
       return state;
     } else if (choice.indices.length > 1) {
-      console.log(choice.indices);
       throw Error('Something went wrong');
     }
     let index: number = choice.indices[0];
