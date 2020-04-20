@@ -141,7 +141,7 @@ export const Gardens: Card = register_kingdom_card(make_card({
 export const Workshop: Card = register_kingdom_card(make_card({
   name: 'Workshop',
   energy: 2,
-  description: 'Gain a card from the card supply pile costing up to 5',
+  description: 'Gain a card from supply costing up to 5',
   fn: function* (state: GameState) {
     let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to gain for Workshop'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
     let supplyCard = game.getSupplyCard(state, choice.cardname, 'supply').supplyCard;
@@ -156,6 +156,17 @@ export const Workshop: Card = register_kingdom_card(make_card({
     return gain(state, choice.cardname);
   }
 }));
+
+export const Factory: Card = register_kingdom_card(make_card({
+  name: 'Factory',
+  energy: 4,
+  description: 'Gain a card from supply',
+  fn: function* (state: GameState) {
+    let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to gain for Factory'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
+    return gain(state, choice.cardname);
+  }
+}));
+
 
 export const Smithy: Card = register_kingdom_card(make_card({
   name: 'Smithy',
@@ -227,6 +238,19 @@ export const Chapel: Card = register_kingdom_card(make_card({
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
     state = trash(state, choice.indices, 'hand');
+    return state;
+  }
+}));
+
+
+export const Beggar: Card = register_kingdom_card(make_card({
+  name: 'Beggar',
+  energy: 1,
+  description: 'Gain 3 coppers to your hand',
+  fn: function* (state: GameState) {
+    state = state.set('hand', state.get('hand').push(Copper));
+    state = state.set('hand', state.get('hand').push(Copper));
+    state = state.set('hand', state.get('hand').push(Copper));
     return state;
   }
 }));
