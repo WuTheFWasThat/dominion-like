@@ -304,6 +304,28 @@ export const Steward: Card = register_kingdom_card(make_card({
   }
 }));
 
+
+/*
+export const Sacrifice: Card = register_kingdom_card(make_card({
+  name: 'Sacrifice',
+  energy: 0,
+  description: 'Choose a card from your hand, play it, and trash it.',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to trash for Mouse', limit: 1}]) as game.PickHandChoice;
+    if (choice.indices.length === 0) {
+      return state;
+    } else if (choice.indices.length > 1) {
+      throw Error('Something went wrong');
+    }
+    let index = choice.indices[0];
+    let card = choice.indices.
+    state = trash(state, choice.indices, 'hand');
+    return state;
+  }
+}));
+*/
+
+
 export const Beggar: Card = register_kingdom_card(make_card({
   name: 'Beggar',
   energy: 1,
