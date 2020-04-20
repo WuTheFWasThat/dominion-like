@@ -68,11 +68,11 @@ export const InitialState = Immutable.Record({
     })(),
     Immutable.Record({
       card: cards.Silver,
-      cost: 2,
+      cost: 3,
     })(),
     Immutable.Record({
       card: cards.Gold,
-      cost: 3,
+      cost: 6,
     })(),
     Immutable.Record({
       card: cards.Estate,
