@@ -434,6 +434,7 @@ export const Recruit: Card = register_kingdom_event(make_card({
   }
 }));
 
+/*
 export const SolarPower: Card = register_kingdom_event(make_card({
   name: 'Solar Power',
   energy: 0,
@@ -469,16 +470,36 @@ export const Adrenaline: Card = register_kingdom_event(make_card({
     return state;
   }
 }));
+*/
 
 export const Greed: Card = register_kingdom_event(make_card({
   name: 'Greed',
   energy: 0,
-  cost_range: [10, 25],
+  cost_range: [0, 25],
   description: 'Convert all your $ to victory points.',
   fn: function* (state: GameState) {
     state.set('victory', state.get('victory') + state.get('money'));
     return state.set('money', 0);
   },
+}));
+
+
+export const Expedite: Card = register_kingdom_event(make_card({
+  name: 'Expedite',
+  energy: 1,
+  cost_range: [0, 0],
+  description: 'Choose a card from supply.  Pay its cost and gain it in hand',
+  fn: function* (state: GameState) {
+    let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to gain for Expedite'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
+    let supply_card = game.getSupplyCard(state, choice.cardname, 'supply') as game.SupplyCard;
+    if (state.get('money') < supply_card.get('cost')) {
+      state = state.set('error', `Insufficient money`);
+      return state;
+    }
+    state = state.set('money', state.get('money') - supply_card.get('cost'));
+    state = state.set('hand', state.get('hand').push(supply_card.get('card')));
+    return state;
+  }
 }));
 
 
@@ -504,7 +525,7 @@ export const Riches: Card = register_kingdom_situation(make_card({
   description: 'If you have $1000, the game ends',
   fn: function* (state: GameState) {
     function* hook(state: GameState) {
-      if (state.get('money') >= 10) {
+      if (state.get('money') >= 1000) {
         state = state.set('ended', true);
       }
       return state;

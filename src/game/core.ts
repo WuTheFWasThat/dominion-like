@@ -382,7 +382,7 @@ export function trash_event(state: GameState, cardName: string): GameState {
 }
 
 
-function getSupplyCard(state: GameState, cardName: string, type: BuyType): SupplyCard | null {
+export function getSupplyCard(state: GameState, cardName: string, type: BuyType): SupplyCard | null {
   for (let i = 0; i < state.get(type).size; i++) {
     const supplyCard = state.get(type).get(i);
     if (supplyCard === undefined) {
