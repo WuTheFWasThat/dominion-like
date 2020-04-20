@@ -485,6 +485,23 @@ export const Favor: Card = register_kingdom_event(make_card({
   }
 }));
 
+export const Inflation: Card = register_kingdom_event(make_card({
+  name: 'Inflation',
+  energy: 0,
+  cost_range: [0, 0],
+  description: 'Once per game, gain $20.  All cards cost $1 extra',
+  fn: function* (state: GameState) {
+    state = state.set('money', state.get('money') + 20);
+    let n = state.get('supply').size;
+    for (let i = 0; i < n; i++) {
+      const supplyCard = state.get('supply').get(i) as game.SupplyCard;
+      state = state.set('supply', state.get('supply').set(i, supplyCard.set('cost', supplyCard.get('cost') + 1)));
+    }
+    state = trash_event(state, 'Inflation');
+    return state;
+  }
+}));
+
 /*
 export const Efficiency: Card = register_kingdom_event(make_card({
   name: 'Efficiency',

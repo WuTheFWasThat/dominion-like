@@ -8,12 +8,6 @@ energy costs per card
 
 give +$1 per discard
 
-implement situations
-
-simple +1 card starter
-
-event that gives a bunch of money, but makes all cards cost 1
-
 card that draws +1 card each time it's played
 
 event ideas:
@@ -31,9 +25,8 @@ make it so you can export/load the whole log
 
 put git commit hash somewhere (in error msgs?)
 
-- make all-for-one draw from deck instead of discard?
-
-- event, gain effect of a card in supply?
-
 0 energy cost, trash a card from your hand, then +1 card
 Rats
+recycle (gain energy = energy cost)
+
+having cards go in play, and be discarded when you reboot?
