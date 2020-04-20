@@ -64,15 +64,15 @@ export const InitialState = Immutable.Record({
   supply: Immutable.List([
     Immutable.Record({
       card: cards.Copper,
-      cost: 0,
-    })(),
-    Immutable.Record({
-      card: cards.Silver,
       cost: 1,
     })(),
     Immutable.Record({
-      card: cards.Gold,
+      card: cards.Silver,
       cost: 2,
+    })(),
+    Immutable.Record({
+      card: cards.Gold,
+      cost: 3,
     })(),
     Immutable.Record({
       card: cards.Estate,
@@ -80,7 +80,7 @@ export const InitialState = Immutable.Record({
     })(),
     Immutable.Record({
       card: cards.Duchy,
-      cost: 2,
+      cost: 3,
     })(),
     Immutable.Record({
       card: cards.Province,

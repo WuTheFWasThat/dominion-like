@@ -144,7 +144,7 @@ export const Lab: Card = register_kingdom_card(make_card({
 export const Horse: Card = register_kingdom_card(make_card({
   name: 'Horse',
   energy: 0,
-  cost_range: [0, 2],
+  cost_range: [1, 2],
   description: '+2 cards, trash this',
   fn: function* (state: GameState) {
     // state = state.set('energy', state.get('energy') + 1);
@@ -160,7 +160,7 @@ export const Horse: Card = register_kingdom_card(make_card({
 export const Hound: Card = register_kingdom_card(make_card({
   name: 'Hound',
   energy: 0,
-  cost_range: [0, 2],
+  cost_range: [1, 2],
   description: '+1 card.  When discarded, +1 card',
   fn: function* (state: GameState) {
     state = draw(state, 1);
@@ -287,6 +287,7 @@ export const Vassal: Card = register_kingdom_card(make_card({
 export const Cellar: Card = register_kingdom_card(make_card({
   name: 'Cellar',
   energy: 0,
+  cost_range: [1, 3],
   description: 'Discard any number of cards, draw that many',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
