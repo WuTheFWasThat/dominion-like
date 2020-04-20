@@ -297,6 +297,36 @@ export const Cellar: Card = register_kingdom_card(make_card({
 }));
 
 
+export const AllForOne: Card = register_kingdom_card(make_card({
+  name: 'All For One',
+  energy: 1,
+  description: 'Put all cards in your discard costing 0 energy in your hand',
+  fn: function* (state: GameState) {
+    let indices = [];
+    for (let i = 0; i < state.get('discard').size; i++) {
+      let card = state.get('discard').get(i);
+      if (card === undefined) {
+        throw Error(`Unexpected card out of bounds ${i}`);
+      }
+      if (card.get('energy') === 0) {
+        indices.push(i);
+      }
+    }
+    indices = indices.slice().sort().reverse();
+    for (let i = 0; i < indices.length; i++) {
+      let index = indices[i];
+      let card = state.get('discard').get(index);
+      if (card === undefined) {
+        throw Error(`Unexpected card out of bounds ${index}`);
+      }
+      state = state.set('discard', state.get('discard').remove(index));
+      state = state.set('hand', state.get('hand').push(card));
+    }
+    return state;
+  }
+}));
+
+
 export const Reboot: Card = make_card({
   name: 'Reboot',
   energy: 1,

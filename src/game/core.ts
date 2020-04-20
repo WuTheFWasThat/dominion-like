@@ -205,9 +205,9 @@ export function draw(state: GameState, ndraw?: number): GameState {
 }
 
 export function discard(state: GameState, indices: Array<number>): GameState {
-  indices = indices.slice().sort();
+  indices = indices.slice().sort().reverse();
   let cards: Array<Card> = [];
-  for (let i = indices.length -1; i >= 0; i--) {
+  for (let i = 0; i < indices.length; i++) {
     let index = indices[i];
     const card = state.get('hand').get(index);
     if (card === undefined) {
@@ -224,8 +224,8 @@ export function discard(state: GameState, indices: Array<number>): GameState {
 }
 
 export function trash(state: GameState, indices: Array<number>, type: DeckType): GameState {
-  indices = indices.slice().sort();
-  for (let i = indices.length -1; i >= 0; i--) {
+  indices = indices.slice().sort().reverse();
+  for (let i = 0; i < indices.length; i++) {
     let index = indices[i];
     let card = state.get(type).get(index);
     if (card === undefined) {

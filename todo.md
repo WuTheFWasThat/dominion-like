@@ -15,11 +15,6 @@ should buys really cost energy?
 
 convert energy to money
 give +$1 per discard
-cellar?
-
-make pick one card less weird
-
-card that decreases its cost each play
 
 all-for-one card that draws everything zero cost
 
