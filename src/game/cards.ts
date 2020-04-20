@@ -252,10 +252,7 @@ export const ThroneRoom: Card = register_kingdom_card(make_card({
       throw Error('Something went wrong');
     }
     let index: number = choice.indices[0];
-    let card = state.get('hand').get(index);
-    if (card === undefined) {
-      throw Error(`Tried to play ${index} which does not exist`);
-    }
+    let card = state.get('hand').get(index) as Card;
     // TODO: use helper function for this
     state = state.set('hand', state.get('hand').remove(index));
     state = yield* card.get('fn')(state);
@@ -325,6 +322,29 @@ export const AllForOne: Card = register_kingdom_card(make_card({
     }
     return state;
   }
+}));
+
+export const Madness: Card = register_kingdom_card(make_card({
+  name: 'Madness',
+  energy: 1,
+  description: 'Choose a card in hand.  Decrease its energy cost by 1 (cannot go negative). Trash this card',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickhand', max: 1, message: 'Pick card to for Madness'}]) as game.PickHandChoice;
+    if (choice.indices.length === 0) {
+      return state;
+    } else if (choice.indices.length > 1) {
+      throw Error('Something went wrong');
+    }
+    let index: number = choice.indices[0];
+    let card = state.get('hand').get(index) as Card;
+    card = card.set('energy', Math.max(0, card.get('energy') - 1));
+    state = state.set('hand', state.get('hand').set(index, card));
+    return state;
+  },
+  cleanup: function(state: GameState, card: Card) {
+    state = state.set('trash', state.get('trash').push(card));
+    return state;
+  },
 }));
 
 
