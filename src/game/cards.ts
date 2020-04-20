@@ -196,7 +196,7 @@ export const Horse: Card = register_kingdom_card(make_card({
 
 export const Hound: Card = register_kingdom_card(make_card({
   name: 'Hound',
-  energy: 0,
+  energy: 1,
   cost_range: [1, 2],
   description: '+1 card.  When discarded, +1 card',
   fn: function* (state: GameState) {
@@ -213,7 +213,7 @@ export const Hound: Card = register_kingdom_card(make_card({
 
 export const Chapel: Card = register_kingdom_card(make_card({
   name: 'Chapel',
-  energy: 2,
+  energy: 3,
   description: 'Trash any number of cards from your hand',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
@@ -237,7 +237,7 @@ export const Library: Card = register_kingdom_card(make_card({
 export const FoolsGold: Card = register_kingdom_card(make_card({
   name: 'Fool\'s Gold',
   energy: 0,
-  cost_range: [2, 6],
+  cost_range: [3, 6],
   description: (state: GameState) => {
     let amt = state.get('extra').get('fools_gold');
     return '+$' + amt + ', all Fool\'s Golds give an additional $1';
@@ -280,6 +280,7 @@ export const Coppersmith: Card = register_kingdom_card(make_card({
 export const ThroneRoom: Card = register_kingdom_card(make_card({
   name: 'Throne Room',
   energy: 0,
+  cost_range: [2, 4],
   description: 'Choose a card from your hand, pay its energy cost to play it twice',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', max: 1, message: 'Pick card to play for Throne Room'}]) as game.PickHandChoice;
@@ -434,19 +435,27 @@ export const Recruit: Card = register_kingdom_event(make_card({
   }
 }));
 
-/*
-export const SolarPower: Card = register_kingdom_event(make_card({
-  name: 'Solar Power',
-  energy: 0,
-  cost_range: [16, 32],
-  description: 'Once per game, +16 energy',
+export const Bridge: Card = register_kingdom_event(make_card({
+  name: 'Bridge',
+  energy: 2,
+  cost_range: [8, 16],
+  description: 'Choose a card from supply,  Decrease its $ cost by 1 (cannot go negative).',
   fn: function* (state: GameState) {
-    state = trash_event(state, 'Solar Power');
-    state = state.set('energy', state.get('energy') + 10);
+    let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to decrease the cost of'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
+    let { index, supplyCard } = game.getSupplyCard(state, choice.cardname, 'supply');
+    if (supplyCard === null) {
+      state = state.set('error', `Card chosen not in supply!`);
+      return state;
+    }
+    if (supplyCard.get('cost') === 0) {
+      return state;
+    }
+    state = state.set('supply', state.get('supply').set(index, supplyCard.set('cost', supplyCard.get('cost') - 1)));
     return state;
   }
 }));
 
+/*
 export const Efficiency: Card = register_kingdom_event(make_card({
   name: 'Efficiency',
   energy: 0,
@@ -491,7 +500,11 @@ export const Expedite: Card = register_kingdom_event(make_card({
   description: 'Choose a card from supply.  Pay its cost and gain it in hand',
   fn: function* (state: GameState) {
     let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to gain for Expedite'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
-    let supply_card = game.getSupplyCard(state, choice.cardname, 'supply') as game.SupplyCard;
+    let supply_card = game.getSupplyCard(state, choice.cardname, 'supply').supplyCard;
+    if (supply_card === null) {
+      state = state.set('error', `Card chosen not in supply!`);
+      return state;
+    }
     if (state.get('money') < supply_card.get('cost')) {
       state = state.set('error', `Insufficient money`);
       return state;

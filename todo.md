@@ -34,3 +34,5 @@ make it so you can export/load the whole log
 put git commit hash somewhere (in error msgs?)
 
 - make all-for-one draw from deck instead of discard?
+
+- event, gain effect of a card in supply?

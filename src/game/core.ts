@@ -255,7 +255,7 @@ export function trash(state: GameState, indices: Array<number>, type: DeckType):
 }
 
 export function gain(state: GameState, cardName: string): GameState {
-  let supply_card = getSupplyCard(state, cardName, 'supply');
+  let supply_card = getSupplyCard(state, cardName, 'supply').supplyCard;
   if (supply_card === null) {
     throw Error(`Tried to gain ${cardName} which does not exist`);
   }
@@ -382,17 +382,17 @@ export function trash_event(state: GameState, cardName: string): GameState {
 }
 
 
-export function getSupplyCard(state: GameState, cardName: string, type: BuyType): SupplyCard | null {
+export function getSupplyCard(state: GameState, cardName: string, type: BuyType): { index: number, supplyCard: SupplyCard | null} {
   for (let i = 0; i < state.get(type).size; i++) {
     const supplyCard = state.get(type).get(i);
     if (supplyCard === undefined) {
       throw Error(`Supply card out of bounds ${i}`);
     }
     if (supplyCard.get('card').get('name') === cardName) {
-      return supplyCard;
+      return { index: i, supplyCard: supplyCard };
     }
   }
-  return null;
+  return { index: -1, supplyCard: null };
 }
 
 function setSupplyCardCost(state: GameState, cardName: string, cost: number, type: BuyType): GameState {
@@ -430,7 +430,7 @@ export function count_in_deck(state: GameState, fn: (card: Card) => boolean): nu
 
 async function playTurn(state: GameState, choice: PlayerChoice, player: Player) {
   if (isBuy(choice)) {
-    const supply_card = getSupplyCard(state, choice.cardname, 'supply');
+    const supply_card = getSupplyCard(state, choice.cardname, 'supply').supplyCard;
     if (supply_card === null) {
       state = state.set('error', 'Card not in supply?');
       return state;
@@ -448,7 +448,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     // buys cost energy too?
     // state = state.set('energy', state.get('energy') + 1);
   } else if (isEvent(choice)) {
-    const supply_card = getSupplyCard(state, choice.cardname, 'events');
+    const supply_card = getSupplyCard(state, choice.cardname, 'events').supplyCard;
     if (supply_card === null) {
       state = state.set('error', 'Card not in supply?');
       return state;
