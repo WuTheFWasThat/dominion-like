@@ -30,3 +30,11 @@ card that draws +1 card each time it's played
 
 event ideas:
   the next card you buy goes in hand
+
+export const Lurker: Card = register_kingdom_card(make_card({
+  name: 'Lurker',
+  energy: 1,
+  description: 'Either, choose a card in supply and trash a copy, or gain a card from trash',
+  fn: function* (state: GameState) {
+  },
+}));

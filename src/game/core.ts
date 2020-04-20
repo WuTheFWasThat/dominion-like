@@ -86,6 +86,14 @@ export const InitialState = Immutable.Record({
       card: cards.Province,
       cost: 6,
     })(),
+    Immutable.Record({
+      card: cards.Donkey,
+      cost: 1,
+    })(),
+    Immutable.Record({
+      card: cards.Mule,
+      cost: 2,
+    })(),
   ]),
   events: Immutable.List([
     Immutable.Record({
@@ -93,7 +101,7 @@ export const InitialState = Immutable.Record({
       cost: 0,
     })(),
   ]),
-  draw: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Estate]),
+  draw: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Donkey, cards.Donkey]),
   discard: Immutable.List([]),
   hand: Immutable.List([]),
   trash: Immutable.List([]),
@@ -111,7 +119,7 @@ export function initial_state(seed: number | null): GameState {
   let actual_seed = seed === null ? random.createEntropy()[0] : seed;
   const mt = random.MersenneTwister19937.seed(actual_seed);
   let state: GameState = InitialState();
-  const kingdom = random.sample(mt, Object.keys(cards.KINGDOM_CARDS), 10).map((k) => cards.KINGDOM_CARDS[k]);
+  const kingdom = random.sample(mt, Object.keys(cards.KINGDOM_CARDS), 8).map((k) => cards.KINGDOM_CARDS[k]);
   kingdom.forEach((card) => {
     let cost_range = card.get('cost_range') || [1, 5];
     let setup = card.get('setup');
@@ -126,7 +134,7 @@ export function initial_state(seed: number | null): GameState {
       })()
     ));
   });
-  const kingdom_events = random.sample(mt, Object.keys(cards.KINGDOM_EVENTS), 5).map((k) => cards.KINGDOM_EVENTS[k]);
+  const kingdom_events = random.sample(mt, Object.keys(cards.KINGDOM_EVENTS), 4).map((k) => cards.KINGDOM_EVENTS[k]);
   kingdom_events.forEach((card) => {
     let cost_range = card.get('cost_range') || [0, 5];
     state = state.set('events', state.get('events').push(

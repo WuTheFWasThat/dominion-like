@@ -87,6 +87,24 @@ export const Province: Card = make_card({
   }
 });
 
+export const Donkey: Card = make_card({
+  name: 'Donkey',
+  energy: 1,
+  description: '+1 card',
+  fn: function* (state: GameState) {
+    return draw(state, 1);
+  }
+});
+
+export const Mule: Card = make_card({
+  name: 'Mule',
+  energy: 1,
+  description: '+2 card',
+  fn: function* (state: GameState) {
+    return draw(state, 2);
+  }
+});
+
 
 export const Gardens: Card = register_kingdom_card(make_card({
   name: 'Gardens',
@@ -108,7 +126,6 @@ export const Workshop: Card = register_kingdom_card(make_card({
     return gain(state, choice.cardname);
   }
 }));
-
 
 export const Smithy: Card = register_kingdom_card(make_card({
   name: 'Smithy',
