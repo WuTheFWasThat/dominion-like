@@ -193,7 +193,7 @@ export const Hound: Card = register_kingdom_card(make_card({
 
 export const Chapel: Card = register_kingdom_card(make_card({
   name: 'Chapel',
-  energy: 1,
+  energy: 2,
   description: 'Trash any number of cards from your hand',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
@@ -346,6 +346,7 @@ export const AllForOne: Card = register_kingdom_card(make_card({
 export const Madness: Card = register_kingdom_card(make_card({
   name: 'Madness',
   energy: 1,
+  cost_range: [8, 16],
   description: 'Choose a card in hand.  Decrease its energy cost by 1 (cannot go negative). Trash this card',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', max: 1, message: 'Pick card to for Madness'}]) as game.PickHandChoice;
