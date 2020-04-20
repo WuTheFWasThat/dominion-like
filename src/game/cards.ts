@@ -185,7 +185,6 @@ export const Horse: Card = register_kingdom_card(make_card({
   cost_range: [1, 2],
   description: '+2 cards, trash this',
   fn: function* (state: GameState) {
-    // state = state.set('energy', state.get('energy') + 1);
     state = draw(state, 2);
     return state;
   },
@@ -280,8 +279,8 @@ export const Coppersmith: Card = register_kingdom_card(make_card({
 
 export const ThroneRoom: Card = register_kingdom_card(make_card({
   name: 'Throne Room',
-  energy: 1,
-  description: 'Play a card from your hand twice',
+  energy: 0,
+  description: 'Choose a card from your hand, pay its energy cost to play it twice',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', max: 1, message: 'Pick card to play for Throne Room'}]) as game.PickHandChoice;
     if (choice.indices.length === 0) {
@@ -291,6 +290,7 @@ export const ThroneRoom: Card = register_kingdom_card(make_card({
     }
     let index: number = choice.indices[0];
     let card = state.get('hand').get(index) as Card;
+    state = state.set('energy', state.get('energy') + card.get('energy'));
     state = state.set('log', state.get('log').push(`Played throne room on ${card.get('name')}`));
     // TODO: use helper function for this
     state = state.set('hand', state.get('hand').remove(index));
@@ -480,6 +480,7 @@ export const Greed: Card = register_kingdom_event(make_card({
     return state.set('money', 0);
   },
 }));
+
 
 export const Triumph: Card = make_card({
   name: 'Triumph',
