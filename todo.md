@@ -14,7 +14,11 @@ put git commit hash somewhere (in error msgs?)
 Rats
   description: '+1 card, trash a card from your hand besides Rats. Gain a Rats. If trashed, +1 card.',
 
-recycle (gain energy = energy cost)
+recycle (lose energy = energy cost)
+
+idea: play a card and trash it
+
+trash a card from your discard pile
 
 having cards go in play, and be discarded when you reboot?
 

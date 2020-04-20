@@ -256,6 +256,7 @@ export const Lurker: Card = register_kingdom_card(make_card({
         return state;
       }
       state = state.set('trash', state.get('trash').push(supplyCard.get('card')));
+      state = state.set('log', state.get('log').push(`Trashed a ${supplyCard.get('card').get('name')} from supply`));
       return state;
     } else if (choice.choice === 1) {
       let trashchoice = (yield ([state, {type: 'picktrash', message: 'Pick card to retrieve from trash'} as game.PickTrashQuestion])) as game.PickTrashChoice;
@@ -266,6 +267,7 @@ export const Lurker: Card = register_kingdom_card(make_card({
       }
       state = state.set('trash', state.get('trash').remove(trashchoice.index));
       state = state.set('discard', state.get('trash').push(card));
+      state = state.set('log', state.get('log').push(`Gained a ${card.get('name')} from trash`));
       return state;
     } else {
       state = state.set('error', `Unexpected Lurker choice ${choice.choice}`);
@@ -274,6 +276,33 @@ export const Lurker: Card = register_kingdom_card(make_card({
   }
 }));
 
+
+export const Steward: Card = register_kingdom_card(make_card({
+  name: 'Steward',
+  energy: 1,
+  description: 'Choose one: +2 cards, +$2, or trash up to 2 cards from your hand',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pick', message: 'Pick for steward:', options: ['+2 cards', '+$2', 'Trash 2 cards from your hand']}]) as game.PickChoice;
+    if (choice.choice === 0) {
+      state = draw(state, 2);
+      return state;
+    } else if (choice.choice === 1) {
+      state = state.set('money', state.get('money') + 2);
+      return state;
+    } else if (choice.choice === 2) {
+      let trashchoice = (yield ([state, {type: 'pickhand', message: 'Pick cards to trash for steward', max: 2} as game.PickHandQuestion])) as game.PickHandChoice;
+      if (trashchoice.indices.length > 2) {
+        state = state.set('error', 'Cannot trash more than 2 cards with Steward');
+        return state;
+      }
+      state = trash(state, trashchoice.indices, 'hand');
+      return state;
+    } else {
+      state = state.set('error', `Unexpected Steward choice ${choice.choice}`);
+      return state;
+    }
+  }
+}));
 
 export const Beggar: Card = register_kingdom_card(make_card({
   name: 'Beggar',
