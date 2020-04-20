@@ -231,6 +231,23 @@ export const Chapel: Card = register_kingdom_card(make_card({
   }
 }));
 
+export const Mouse: Card = register_kingdom_card(make_card({
+  name: 'Mouse',
+  energy: 0,
+  description: 'Trash a card from your hand. If you do, +1 card',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to trash for Mouse', limit: 1}]) as game.PickHandChoice;
+    if (choice.indices.length === 0) {
+      return state;
+    } else if (choice.indices.length > 1) {
+      throw Error('Something went wrong');
+    }
+    state = trash(state, choice.indices, 'hand');
+    state = draw(state, 1);
+    return state;
+  }
+}));
+
 export const Library: Card = register_kingdom_card(make_card({
   name: 'Library',
   energy: 1,
@@ -347,7 +364,7 @@ export const Cellar: Card = register_kingdom_card(make_card({
 
 export const AllForOne: Card = register_kingdom_card(make_card({
   name: 'All For One',
-  energy: 1,
+  energy: 2,
   description: 'Put all cards in your draw costing 0 energy in your hand',
   fn: function* (state: GameState) {
     let indices = [];
@@ -531,7 +548,7 @@ export const Adrenaline: Card = register_kingdom_event(make_card({
 export const Greed: Card = register_kingdom_event(make_card({
   name: 'Greed',
   energy: 0,
-  cost_range: [0, 25],
+  cost_range: [1, 25],
   description: 'Convert all your $ to victory points.',
   fn: function* (state: GameState) {
     state.set('victory', state.get('victory') + state.get('money'));

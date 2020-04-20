@@ -25,8 +25,9 @@ make it so you can export/load the whole log
 
 put git commit hash somewhere (in error msgs?)
 
-0 energy cost, trash a card from your hand, then +1 card
 Rats
+  description: '+1 card, trash a card from your hand besides Rats. Gain a Rats. If trashed, +1 card.',
+
 recycle (gain energy = energy cost)
 
 having cards go in play, and be discarded when you reboot?
