@@ -19,14 +19,20 @@ class App extends React.Component<AppProps, AppState> {
   constructor(props: AppProps) {
     super(props);
 
-    this.state = this.initialState();
+    this.state = App.initialState();
   }
 
-  initialState() {
+  static initialState() {
     return {
       handIndices: [],
       error: null,
     };
+  }
+
+  componentDidUpdate(oldProps: AppProps) {
+    if (oldProps !== this.props) {
+      this.setState(App.initialState())
+    }
   }
 
   // updateQueryParams() {

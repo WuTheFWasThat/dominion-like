@@ -28,3 +28,7 @@ export const Lurker: Card = register_kingdom_card(make_card({
   fn: function* (state: GameState) {
   },
 }));
+
+make it so you can export/load the whole log
+
+put git commit hash somewhere (in error msgs?)
