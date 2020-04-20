@@ -355,7 +355,7 @@ export const AllForOne: Card = register_kingdom_card(make_card({
       let index = indices[i];
       let card = state.get('discard').get(index);
       if (card === undefined) {
-        throw Error(`Unexpected card out of bounds ${index}`);
+        throw Error(`Unexpected card out of bounds ${index} indices ${indices}`);
       }
       state = state.set('discard', state.get('discard').remove(index));
       state = state.set('hand', state.get('hand').push(card));
