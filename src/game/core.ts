@@ -112,12 +112,12 @@ export function initial_state(seed: number | null): GameState {
   let state: GameState = InitialState();
   const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 10);
   kingdom.forEach((card) => {
-    let cost_range = card.get('cost_range') || [0, 5];
+    let cost_range = card.get('cost_range') || [1, 5];
     let setup = card.get('setup');
     if (setup) {
-      console.log('setting up', state.get('extra').toJS());
+      // console.log('setting up', state.get('extra').toJS());;
       state = setup(state);
-      console.log(state.get('extra').toJS());
+      // console.log(state.get('extra').toJS());
     }
     state = state.set('supply', state.get('supply').push(
       Immutable.Record({
@@ -295,6 +295,8 @@ function isEvent(choice: PlayerChoice): choice is EventChoice {
 export interface PickHandQuestion extends PlayerQuestion {
   type: 'pickhand',
   message: string,
+  min?: number,
+  max?: number,
 };
 export function isPickHandQuestion(q: PlayerQuestion): q is PickHandQuestion {
     return q.type === 'pickhand';

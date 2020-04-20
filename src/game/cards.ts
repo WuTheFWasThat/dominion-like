@@ -122,13 +122,29 @@ export const Lab: Card = register_kingdom_card(make_card({
   name: 'Lab',
   energy: 0,
   cost_range: [4, 8],
-  description: '+2 card',
+  description: '+2 cards',
   fn: function* (state: GameState) {
-    // state = state.set('energy', state.get('energy') + 1);
     state = draw(state, 2);
     return state;
   }
 }));
+
+export const Horse: Card = register_kingdom_card(make_card({
+  name: 'Horse',
+  energy: 0,
+  cost_range: [0, 2],
+  description: '+2 cards, trash this',
+  fn: function* (state: GameState) {
+    // state = state.set('energy', state.get('energy') + 1);
+    state = draw(state, 2);
+    return state;
+  },
+  cleanup: function(state: GameState, card: Card) {
+    state = state.set('trash', state.get('trash').push(card));
+    return state;
+  }
+}));
+
 
 export const Chapel: Card = register_kingdom_card(make_card({
   name: 'Chapel',
@@ -201,7 +217,7 @@ export const ThroneRoom: Card = register_kingdom_card(make_card({
   energy: 1,
   description: 'Play a card from your hand twice',
   fn: function* (state: GameState) {
-    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to play for Throne Room'}]) as game.PickHandChoice;
+    let choice = (yield [state, {type: 'pickhand', max: 1, message: 'Pick card to play for Throne Room'}]) as game.PickHandChoice;
     if (choice.indices.length === 0) {
       return state;
     } else if (choice.indices.length > 1) {

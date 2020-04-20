@@ -19,14 +19,11 @@ card that gives +1 card per discard
 
 make pick one card less weird
 
-cards that can trash themselves
 card that decreases its cost each play
 
 all-for-one card that draws everything zero cost
 
 implement situations
-
-coppersmith change to increase only coppers in hand
 
 rats
 

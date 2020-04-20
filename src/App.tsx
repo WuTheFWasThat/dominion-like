@@ -12,6 +12,7 @@ type AppProps = {
 };
 type AppState = {
   handIndices: Array<number>,
+  error: string | null,
 };
 
 class App extends React.Component<AppProps, AppState> {
@@ -24,6 +25,7 @@ class App extends React.Component<AppProps, AppState> {
   initialState() {
     return {
       handIndices: [],
+      error: null,
     };
   }
 
@@ -33,12 +35,6 @@ class App extends React.Component<AppProps, AppState> {
   //   const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + encode_query_params(d);
   //   window.history.pushState({ path: newurl }, '', newurl);
   // }
-
-  showError(err: any) {
-    // TODO: better
-    console.error(err);
-    alert(err);
-  }
 
   render() {
     console.log('rerender', this.props.state.toJS());
@@ -60,7 +56,7 @@ class App extends React.Component<AppProps, AppState> {
     return (
       <div style={{width: '100%'}}>
         <div style={{color: 'red'}}>
-            {this.props.state.get('error') || ''}
+            {this.props.state.get('error') || this.state.error || ''}
         </div>
         Energy: {this.props.state.get('energy')}
         <br/>
@@ -84,21 +80,34 @@ class App extends React.Component<AppProps, AppState> {
         {instruction_text}
         </b>
         {(() => {
-          if (this.props.question && game.isPickHandQuestion(this.props.question)) {
-            let onClick = () => {
-              this.props.choice_cb({
-                type: 'pickhand',
-                indices: this.state.handIndices,
-              } as game.PickHandChoice);
-              this.setState({
-                handIndices: [],
-              });
-            };
-            return (
-              <div onClick={onClick}>
-                  Done choosing
-              </div>
-            );
+          if (this.props.question) {
+            if (game.isPickHandQuestion(this.props.question)) {
+              let n = this.state.handIndices.length;
+              if (this.props.question.min !== undefined) {
+                if (n < this.props.question.min) {
+                  return null;
+                }
+              }
+              if (this.props.question.max !== undefined) {
+                if (n > this.props.question.max) {
+                  return null;
+                }
+              }
+              let onClick = () => {
+                this.props.choice_cb({
+                  type: 'pickhand',
+                  indices: this.state.handIndices,
+                } as game.PickHandChoice);
+                this.setState({
+                  handIndices: [],
+                });
+              };
+              return (
+                <div onClick={onClick}>
+                    Done choosing
+                </div>
+              );
+            }
           }
         })()}
         <br/>
