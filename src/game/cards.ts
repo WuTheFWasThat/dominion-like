@@ -338,11 +338,11 @@ export const Cellar: Card = register_kingdom_card(make_card({
 export const AllForOne: Card = register_kingdom_card(make_card({
   name: 'All For One',
   energy: 1,
-  description: 'Put all cards in your discard costing 0 energy in your hand',
+  description: 'Put all cards in your draw costing 0 energy in your hand',
   fn: function* (state: GameState) {
     let indices = [];
-    for (let i = 0; i < state.get('discard').size; i++) {
-      let card = state.get('discard').get(i);
+    for (let i = 0; i < state.get('draw').size; i++) {
+      let card = state.get('draw').get(i);
       if (card === undefined) {
         throw Error(`Unexpected card out of bounds ${i}`);
       }
@@ -353,11 +353,11 @@ export const AllForOne: Card = register_kingdom_card(make_card({
     indices = indices.sort((a,b) => b-a);
     for (let i = 0; i < indices.length; i++) {
       let index = indices[i];
-      let card = state.get('discard').get(index);
+      let card = state.get('draw').get(index);
       if (card === undefined) {
         throw Error(`Unexpected card out of bounds ${index} indices ${indices}`);
       }
-      state = state.set('discard', state.get('discard').remove(index));
+      state = state.set('draw', state.get('draw').remove(index));
       state = state.set('hand', state.get('hand').push(card));
     }
     return state;
