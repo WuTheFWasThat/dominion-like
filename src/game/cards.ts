@@ -141,9 +141,18 @@ export const Gardens: Card = register_kingdom_card(make_card({
 export const Workshop: Card = register_kingdom_card(make_card({
   name: 'Workshop',
   energy: 2,
-  description: 'Gain a card from the card supply pile',
+  description: 'Gain a card from the card supply pile costing up to 5',
   fn: function* (state: GameState) {
     let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to gain for Workshop'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
+    let supplyCard = game.getSupplyCard(state, choice.cardname, 'supply').supplyCard;
+    if (supplyCard === null) {
+      state = state.set('error', `${choice.cardname} not found`);
+      return state;
+    }
+    if (supplyCard.get('cost') > 5) {
+      state = state.set('error', `${choice.cardname} too expensive for Workshop`);
+      return state;
+    }
     return gain(state, choice.cardname);
   }
 }));
@@ -451,6 +460,27 @@ export const Bridge: Card = register_kingdom_event(make_card({
       return state;
     }
     state = state.set('supply', state.get('supply').set(index, supplyCard.set('cost', supplyCard.get('cost') - 1)));
+    return state;
+  }
+}));
+
+export const Favor: Card = register_kingdom_event(make_card({
+  name: 'Favor',
+  energy: 1,
+  cost_range: [1, 3],
+  description: 'Play a card from supply costing up to 7',
+  fn: function* (state: GameState) {
+    let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to gain for Favor'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
+    let supplyCard = game.getSupplyCard(state, choice.cardname, 'supply').supplyCard;
+    if (supplyCard === null) {
+      state = state.set('error', `${choice.cardname} not found`);
+      return state;
+    }
+    if (supplyCard.get('cost') > 7) {
+      state = state.set('error', `${choice.cardname} too expensive for Favor`);
+      return state;
+    }
+    state = yield* supplyCard.get('card').get('fn')(state);
     return state;
   }
 }));

@@ -10,8 +10,6 @@ give +$1 per discard
 
 implement situations
 
-rats
-
 simple +1 card starter
 
 event that gives a bunch of money, but makes all cards cost 1
@@ -36,3 +34,6 @@ put git commit hash somewhere (in error msgs?)
 - make all-for-one draw from deck instead of discard?
 
 - event, gain effect of a card in supply?
+
+0 energy cost, trash a card from your hand, then +1 card
+Rats
