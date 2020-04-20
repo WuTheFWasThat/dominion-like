@@ -47,7 +47,7 @@ export type GameState = Immutable.Record<{
   supply: Immutable.List<SupplyCard>,
   events: Immutable.List<SupplyCard>,
   situations: Immutable.List<Card>,
-  end_hooks: Immutable.List<Effect>,
+  turn_hooks: Immutable.List<Effect>,
   log: Immutable.List<string>,
   extra: Immutable.Map<string, any>,
   random: random.MersenneTwister19937,
@@ -105,8 +105,10 @@ export const InitialState = Immutable.Record({
   discard: Immutable.List([]),
   hand: Immutable.List([]),
   trash: Immutable.List([]),
-  situations: Immutable.List([]),
-  end_hooks: Immutable.List([]),
+  situations: Immutable.List([
+    cards.Triumph,
+  ]),
+  turn_hooks: Immutable.List([]),
   log: Immutable.List([]),
   extra: Immutable.Map<string, any>([]),
   random: null as any,
@@ -143,6 +145,10 @@ export function initial_state(seed: number | null): GameState {
       })()
     ));
   });
+  const kingdom_situations = random.sample(mt, Object.keys(cards.KINGDOM_SITUATIONS), 1).map((k) => cards.KINGDOM_SITUATIONS[k]);
+  kingdom_situations.forEach((card) => {
+    state = state.set('situations', state.get('situations').push(card));
+  });
 
   // useful for testing
   // state = state.set('hand', state.get('hand').push(
@@ -150,7 +156,6 @@ export function initial_state(seed: number | null): GameState {
   // ));
   // state = state.set('money', 100);
 
-  state = state.set('energy', 32);
   state = state.set('seed', actual_seed);
   return state.set('random', mt);
 }
@@ -441,7 +446,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     state = state.set('discard', state.get('discard').push(supply_card.get('card')));
     state = state.set('log', state.get('log').push(`Bought a ${choice.cardname}`));
     // buys cost energy too?
-    // state = state.set('energy', state.get('energy') - 1);
+    // state = state.set('energy', state.get('energy') + 1);
   } else if (isEvent(choice)) {
     const supply_card = getSupplyCard(state, choice.cardname, 'events');
     if (supply_card === null) {
@@ -452,16 +457,12 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
       state = state.set('error', 'Not enough money');
       return state;
     }
-    if (state.get('energy') < supply_card.get('card').get('energy')) {
-      state = state.set('error', 'Not enough energy');
-      return state;
-    }
     state = state.set('error', null);
     state = state.set('money', state.get('money') - supply_card.get('cost'));
     state = state.set('log', state.get('log').push(`Bought a ${choice.cardname}`));
     state = await applyEffect(state, supply_card.get('card').get('fn'), player);
     // buys cost energy too
-    state = state.set('energy', state.get('energy') - supply_card.get('card').get('energy'));
+    state = state.set('energy', state.get('energy') + supply_card.get('card').get('energy'));
   } else if (isPlay(choice)) {
     let play_choice: PlayChoice = (choice as PlayChoice);
     let card = state.get('hand').get(play_choice.index);
@@ -476,7 +477,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     state = state.set('error', null);
     state = state.set('log', state.get('log').push(`Played a ${card.get('name')}`));
     state = await applyEffect(state, play(play_choice.index), player);
-    state = state.set('energy', state.get('energy') - card.get('energy'));
+    state = state.set('energy', state.get('energy') + card.get('energy'));
   } else {
     state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));
   }
@@ -487,7 +488,11 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
   let history = [state];
 
   await player.next(null as any);  // TODO: hmm
-  while (state.get('energy') > 0) {
+  for (let i = 0; i < state.get('situations').size; i++) {
+    let card = state.get('situations').get(i) as Card;
+    state = await applyEffect(state, card.get('fn'), player);
+  }
+  while (!state.get('ended')) {
     let prevstate = state;
 
     let question: ActionQuestion = { type: 'action' };
@@ -506,15 +511,14 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
     }
     state = await playTurn(state, choice, player);
     state = state.set('previous', prevstate);
-  }
-  state = state.set('ended', true);
-  let hooks = state.get('end_hooks');
-  for (let i = 0; i < hooks.size; i++) {
-    let hook = hooks.get(i);
-    if (hook === undefined) {
-      throw Error(`Unexpected undefined hook ${i}`);
+    let hooks = state.get('turn_hooks');
+    for (let i = 0; i < hooks.size; i++) {
+      let hook = hooks.get(i);
+      if (hook === undefined) {
+        throw Error(`Unexpected undefined hook ${i}`);
+      }
+      state = await applyEffect(state, hook, player);
     }
-    state = await applyEffect(state, hook, player);
   }
   await player.next([state, null]); // to let them render final state
   return history;

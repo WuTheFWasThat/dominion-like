@@ -4,6 +4,9 @@ import * as game from  './core';
 /* eslint-disable require-yield */
 
 export let KINGDOM_CARDS: {[name: string]: Card} = {};
+export let KINGDOM_EVENTS: {[name: string]: Card} = {};
+export let KINGDOM_SITUATIONS: {[name: string]: Card} = {};
+
 
 function register_kingdom_card(card: Card) {
   if (KINGDOM_CARDS[card.get('name')]) {
@@ -12,11 +15,12 @@ function register_kingdom_card(card: Card) {
   if (KINGDOM_EVENTS[card.get('name')]) {
     throw new Error(`Already registered ${card.get('name')}`);
   }
+  if (KINGDOM_SITUATIONS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
   KINGDOM_CARDS[card.get('name')] = card;
   return card;
 }
-
-export let KINGDOM_EVENTS: {[name: string]: Card} = {};
 
 function register_kingdom_event(card: Card) {
   if (KINGDOM_CARDS[card.get('name')]) {
@@ -25,10 +29,27 @@ function register_kingdom_event(card: Card) {
   if (KINGDOM_EVENTS[card.get('name')]) {
     throw new Error(`Already registered ${card.get('name')}`);
   }
+  if (KINGDOM_SITUATIONS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
   KINGDOM_EVENTS[card.get('name')] = card;
   return card;
 }
 
+
+function register_kingdom_situation(card: Card) {
+  if (KINGDOM_CARDS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_EVENTS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_SITUATIONS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  KINGDOM_SITUATIONS[card.get('name')] = card;
+  return card;
+}
 
 export const Copper: Card = make_card({
   name: 'Copper',
@@ -453,14 +474,41 @@ export const Greed: Card = register_kingdom_event(make_card({
   name: 'Greed',
   energy: 0,
   cost_range: [10, 25],
-  description: 'At the end of the game, set victory point equal to $ you have.',
+  description: 'Convert all your $ to victory points.',
   fn: function* (state: GameState) {
-    state = trash_event(state, 'Greed');
-    function* end_hook(state: GameState) {
-      // return state.set('victory', state.get('victory') + state.get('money'));
-      return state.set('victory', state.get('money'));
-    }
-    state = state.set('end_hooks', state.get('end_hooks').push(end_hook));
-    return state;
+    state.set('victory', state.get('victory') + state.get('money'));
+    return state.set('money', 0);
   },
+}));
+
+export const Triumph: Card = make_card({
+  name: 'Triumph',
+  energy: 0,
+  description: 'Once you reach 100 points, the game ends',
+  fn: function* (state: GameState) {
+    function* hook(state: GameState) {
+      if (state.get('victory') >= 100) {
+        state = state.set('ended', true);
+      }
+      return state;
+    }
+    state = state.set('turn_hooks', state.get('turn_hooks').push(hook))
+    return state;
+  }
+});
+
+export const Riches: Card = register_kingdom_situation(make_card({
+  name: 'Riches',
+  energy: 0,
+  description: 'If you have $1000, the game ends',
+  fn: function* (state: GameState) {
+    function* hook(state: GameState) {
+      if (state.get('money') >= 10) {
+        state = state.set('ended', true);
+      }
+      return state;
+    }
+    state = state.set('turn_hooks', state.get('turn_hooks').push(hook))
+    return state;
+  }
 }));

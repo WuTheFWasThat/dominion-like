@@ -1,7 +1,3 @@
-- think about infinites
-- add more events
-- implement play area?
-  - implement cellar
 - add initial state setup?
   - implement card that gives N VP after playing N times
   - implement card that gives N VP if N cards in hand
@@ -10,13 +6,7 @@
 energy costs per card
   - display energy costs?
 
-should buys really cost energy?
-  - reboot should though
-
-convert energy to money
 give +$1 per discard
-
-all-for-one card that draws everything zero cost
 
 implement situations
 
@@ -24,12 +14,12 @@ rats
 
 simple +1 card starter
 
-event that gives a bunch of money, but gives situation that makes cards cost 1 more when bought
+event that gives a bunch of money, but makes all cards cost 1
 
 card that draws +1 card each time it's played
 
 event ideas:
-  the next card you buy goes in hand
+  buy a card, it goes in hand
 
 export const Lurker: Card = register_kingdom_card(make_card({
   name: 'Lurker',
