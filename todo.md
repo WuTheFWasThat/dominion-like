@@ -33,5 +33,4 @@ make it so you can export/load the whole log
 
 put git commit hash somewhere (in error msgs?)
 
-figure out all-for-one bug?
-  - make it draw from deck instead of discard?
+- make all-for-one draw from deck instead of discard?

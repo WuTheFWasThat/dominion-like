@@ -350,7 +350,7 @@ export const AllForOne: Card = register_kingdom_card(make_card({
         indices.push(i);
       }
     }
-    indices = indices.slice().sort().reverse();
+    indices = indices.sort((a,b) => b-a);
     for (let i = 0; i < indices.length; i++) {
       let index = indices[i];
       let card = state.get('discard').get(index);

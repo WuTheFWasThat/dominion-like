@@ -218,7 +218,7 @@ export function draw(state: GameState, ndraw?: number): GameState {
 }
 
 export function discard(state: GameState, indices: Array<number>): GameState {
-  indices = indices.slice().sort().reverse();
+  indices = indices.slice().sort((a,b) => b-a);
   let cards: Array<Card> = [];
   for (let i = 0; i < indices.length; i++) {
     let index = indices[i];
@@ -237,7 +237,7 @@ export function discard(state: GameState, indices: Array<number>): GameState {
 }
 
 export function trash(state: GameState, indices: Array<number>, type: DeckType): GameState {
-  indices = indices.slice().sort().reverse();
+  indices = indices.slice().sort((a,b) => b-a);
   let trashed_cards = [];
   for (let i = 0; i < indices.length; i++) {
     let index = indices[i];
