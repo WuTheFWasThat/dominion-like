@@ -15,7 +15,7 @@ should buys really cost energy?
 
 convert energy to money
 give +$1 per discard
-card that gives +1 card per discard
+cellar?
 
 make pick one card less weird
 

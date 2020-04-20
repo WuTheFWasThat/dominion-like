@@ -3,17 +3,29 @@ import * as game from  './core';
 
 /* eslint-disable require-yield */
 
-export let KINGDOM_CARDS: Array<Card> = [];
+export let KINGDOM_CARDS: {[name: string]: Card} = {};
 
 function register_kingdom_card(card: Card) {
-  KINGDOM_CARDS.push(card);
+  if (KINGDOM_CARDS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_EVENTS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  KINGDOM_CARDS[card.get('name')] = card;
   return card;
 }
 
-export let KINGDOM_EVENTS: Array<Card> = [];
+export let KINGDOM_EVENTS: {[name: string]: Card} = {};
 
 function register_kingdom_event(card: Card) {
-  KINGDOM_EVENTS.push(card);
+  if (KINGDOM_CARDS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_EVENTS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  KINGDOM_EVENTS[card.get('name')] = card;
   return card;
 }
 
@@ -272,6 +284,19 @@ export const Vassal: Card = register_kingdom_card(make_card({
 }));
 
 
+export const Cellar: Card = register_kingdom_card(make_card({
+  name: 'Cellar',
+  energy: 0,
+  description: 'Discard any number of cards, draw that many',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
+    state = discard(state, choice.indices);
+    state = draw(state, choice.indices.length);
+    return state;
+  }
+}));
+
+
 export const Reboot: Card = make_card({
   name: 'Reboot',
   energy: 1,
@@ -279,23 +304,27 @@ export const Reboot: Card = make_card({
   fn: function* (state: GameState) {
     state = state.set('money', 0);
     let n = state.get('hand').size;
+    let indices = [];
     for (let i = 0; i < n; i++) {
-      state = discard(state, 0);
+      indices.push(i);
     }
+    state = discard(state, indices);
     state = draw(state, 5);
     return state;
   }
 });
 
-export const Cellar: Card = register_kingdom_event(make_card({
+export const Gamble: Card = register_kingdom_event(make_card({
   name: 'Calculated gamble',
   energy: 1,
   description: 'Discard your hand, draw that many cards',
   fn: function* (state: GameState) {
     let n = state.get('hand').size;
+    let indices = [];
     for (let i = 0; i < n; i++) {
-      state = discard(state, 0);
+      indices.push(i);
     }
+    state = discard(state, indices);
     for (let i = 0; i < n; i++) {
       state = draw(state);
     }

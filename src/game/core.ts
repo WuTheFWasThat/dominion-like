@@ -111,7 +111,7 @@ export function initial_state(seed: number | null): GameState {
   let actual_seed = seed === null ? random.createEntropy()[0] : seed;
   const mt = random.MersenneTwister19937.seed(actual_seed);
   let state: GameState = InitialState();
-  const kingdom = random.sample(mt, cards.KINGDOM_CARDS, 10);
+  const kingdom = random.sample(mt, Object.keys(cards.KINGDOM_CARDS), 10).map((k) => cards.KINGDOM_CARDS[k]);
   kingdom.forEach((card) => {
     let cost_range = card.get('cost_range') || [1, 5];
     let setup = card.get('setup');
@@ -126,7 +126,7 @@ export function initial_state(seed: number | null): GameState {
       })()
     ));
   });
-  const kingdom_events = random.sample(mt, cards.KINGDOM_EVENTS, 2); // TODO: change to ten?
+  const kingdom_events = random.sample(mt, Object.keys(cards.KINGDOM_EVENTS), 5).map((k) => cards.KINGDOM_EVENTS[k]);
   kingdom_events.forEach((card) => {
     let cost_range = card.get('cost_range') || [0, 5];
     state = state.set('events', state.get('events').push(
@@ -204,15 +204,22 @@ export function draw(state: GameState, ndraw?: number): GameState {
   return state;
 }
 
-export function discard(state: GameState, index: number): GameState {
-  const card = state.get('hand').get(index);
-  if (card === undefined) {
-    throw Error(`Unable to discard? ${state.get('hand').size} ${index}`)
+export function discard(state: GameState, indices: Array<number>): GameState {
+  indices = indices.slice().sort();
+  let cards: Array<Card> = [];
+  for (let i = indices.length -1; i >= 0; i--) {
+    let index = indices[i];
+    const card = state.get('hand').get(index);
+    if (card === undefined) {
+      throw Error(`Unable to discard? ${state.get('hand').size} ${index}`)
+    }
+    state = state.set('hand', state.get('hand').delete(index));
+    cards.push(card);
   }
-  state = state.set('hand', state.get('hand').delete(index));
-  state = state.set('discard', state.get('discard').push(card));
-  let fn = card.get('discard') || ((state, card) => state.set('discard', state.get('discard').push(card)));
-  state = fn(state, card);
+  cards.forEach((card) => {
+    let fn = card.get('discard') || ((state, card) => state.set('discard', state.get('discard').push(card)));
+    state = fn(state, card);
+  })
   return state;
 }
 
