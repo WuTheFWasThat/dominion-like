@@ -270,6 +270,7 @@ export const ThroneRoom: Card = register_kingdom_card(make_card({
     }
     let index: number = choice.indices[0];
     let card = state.get('hand').get(index) as Card;
+    state = state.set('log', state.get('log').push(`Played throne room on ${card.get('name')}`));
     // TODO: use helper function for this
     state = state.set('hand', state.get('hand').remove(index));
     state = yield* card.get('fn')(state);
@@ -290,6 +291,7 @@ export const Vassal: Card = register_kingdom_card(make_card({
     if (card === null) {
       return state;
     }
+    state = state.set('log', state.get('log').push(`Vassal plays a ${card.get('name')}`));
     // TODO: use helper function for this
     state = yield* card.get('fn')(state);
     state = state.set('discard', state.get('discard').push(card));
@@ -304,7 +306,7 @@ export const Cellar: Card = register_kingdom_card(make_card({
   cost_range: [1, 3],
   description: 'Discard any number of cards, draw that many',
   fn: function* (state: GameState) {
-    let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to discard for Cellar'}]) as game.PickHandChoice;
     state = discard(state, choice.indices);
     state = draw(state, choice.indices.length);
     return state;
@@ -355,6 +357,7 @@ export const Madness: Card = register_kingdom_card(make_card({
     let index: number = choice.indices[0];
     let card = state.get('hand').get(index) as Card;
     card = card.set('energy', Math.max(0, card.get('energy') - 1));
+    state = state.set('log', state.get('log').push(`Madness decreases cost of a ${card.get('name')} to ${card.get('energy')}`));
     state = state.set('hand', state.get('hand').set(index, card));
     return state;
   },

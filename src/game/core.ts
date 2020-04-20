@@ -233,6 +233,7 @@ export function discard(state: GameState, indices: Array<number>): GameState {
 
 export function trash(state: GameState, indices: Array<number>, type: DeckType): GameState {
   indices = indices.slice().sort().reverse();
+  let trashed_cards = [];
   for (let i = 0; i < indices.length; i++) {
     let index = indices[i];
     let card = state.get(type).get(index);
@@ -240,8 +241,11 @@ export function trash(state: GameState, indices: Array<number>, type: DeckType):
       throw Error(`${type} card out of bounds ${index}`);
     }
     state = state.set(type, state.get(type).remove(index));
+    trashed_cards.push(card);
     state = state.set('trash', state.get('trash').push(card));
   }
+  let names = (trashed_cards).map((card) => card.get('name')).join(', ');
+  state = state.set('log', state.get('log').push(`Trashed ${names}`));
   return state;
 }
 
@@ -251,6 +255,7 @@ export function gain(state: GameState, cardName: string): GameState {
     throw Error(`Tried to gain ${cardName} which does not exist`);
   }
   state = state.set('discard', state.get('discard').push(supply_card.get('card')));
+  state = state.set('log', state.get('log').push(`Gained a ${supply_card.get('card').get('name')}`));
   return state;
 }
 
