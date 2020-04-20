@@ -55,6 +55,10 @@ class App extends React.Component<AppProps, AppState> {
         instruction_text = this.props.question.message;
       } else if (game.isPickSupplyQuestion(this.props.question)) {
         instruction_text = this.props.question.message;
+      } else if (game.isPickTrashQuestion(this.props.question)) {
+        instruction_text = this.props.question.message;
+      } else if (game.isPickQuestion(this.props.question)) {
+        instruction_text = this.props.question.message;
       } else {
         console.log(this.props.question);
         throw new Error('Unhandled question');
@@ -115,6 +119,29 @@ class App extends React.Component<AppProps, AppState> {
                     Done choosing
                 </div>
               );
+            }
+          }
+        })()}
+        {(() => {
+          if (this.props.question) {
+            if (game.isPickQuestion(this.props.question)) {
+              return (<div>
+                  {
+                    this.props.question.options.map((option, i) => {
+                      let onClick = () => {
+                        this.props.choice_cb({
+                          type: 'pick',
+                          choice: i,
+                        } as game.PickChoice);
+                      };
+                      return (
+                        <div key={i} onClick={onClick}>
+                            {option}
+                        </div>
+                      );
+                    })
+                  }
+              </div>)
             }
           }
         })()}
@@ -280,8 +307,19 @@ class App extends React.Component<AppProps, AppState> {
           </h2>
           <div>
             {this.props.state.get('trash').map((card, i) => {
+              let onClick;
+              if (this.props.question) {
+                if (game.isPickTrashQuestion(this.props.question)) {
+                  onClick = () => {
+                    this.props.choice_cb({
+                      type: 'picktrash',
+                      index: i,
+                    } as game.PickTrashChoice);
+                  };
+                }
+              }
               return (
-                <CardComponent key={i} state={this.props.state} card={card}/>
+                <CardComponent key={i} state={this.props.state} card={card} onClick={onClick}/>
               );
             })}
           </div>

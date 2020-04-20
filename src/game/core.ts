@@ -346,6 +346,30 @@ export interface PickSupplyChoice extends PlayerChoice {
   cardname: string,
 };
 
+export interface PickTrashQuestion extends PlayerQuestion {
+  type: 'picktrash',
+  message: string,
+};
+export function isPickTrashQuestion(q: PlayerQuestion): q is PickTrashQuestion {
+    return q.type === 'picktrash';
+}
+export interface PickTrashChoice extends PlayerChoice {
+  type: 'picktrash',
+  index: number,
+};
+
+export interface PickQuestion extends PlayerQuestion {
+  type: 'pick',
+  message: string,
+  options: Array<string>,
+};
+export function isPickQuestion(q: PlayerQuestion): q is PickQuestion {
+    return q.type === 'pick';
+}
+export interface PickChoice extends PlayerChoice {
+  type: 'pick',
+  choice: number,
+};
 
 
 export async function applyEffect(state: GameState, effect: Effect, player: Player): Promise<GameState> {
@@ -395,6 +419,7 @@ export function getSupplyCard(state: GameState, cardName: string, type: BuyType)
   return { index: -1, supplyCard: null };
 }
 
+/*
 function setSupplyCardCost(state: GameState, cardName: string, cost: number, type: BuyType): GameState {
   for (let i = 0; i < state.get(type).size; i++) {
     const supplyCard = state.get(type).get(i);
@@ -407,6 +432,7 @@ function setSupplyCardCost(state: GameState, cardName: string, cost: number, typ
   }
   throw Error('No such supply card');
 }
+*/
 
 export function count_in_deck(state: GameState, fn: (card: Card) => boolean): number {
   let count = 0;

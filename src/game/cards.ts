@@ -242,6 +242,38 @@ export const Chapel: Card = register_kingdom_card(make_card({
   }
 }));
 
+export const Lurker: Card = register_kingdom_card(make_card({
+  name: 'Lurker',
+  energy: 1,
+  description: 'Either: trash any card from supply or gain a card from trash',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pick', message: 'Pick for lurker:', options: ['Trash from supply', 'Gain from trash']}]) as game.PickChoice;
+    if (choice.choice === 0) {
+      let supplychoice = (yield ([state, {type: 'picksupply', message: 'Pick card to trash'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
+      let supplyCard = game.getSupplyCard(state, supplychoice.cardname, 'supply').supplyCard;
+      if (supplyCard === null) {
+        state = state.set('error', `Unexpected Lurker supply choice ${supplychoice.cardname}`);
+        return state;
+      }
+      state = state.set('trash', state.get('trash').push(supplyCard.get('card')));
+      return state;
+    } else if (choice.choice === 1) {
+      let trashchoice = (yield ([state, {type: 'picktrash', message: 'Pick card to retrieve from trash'} as game.PickTrashQuestion])) as game.PickTrashChoice;
+      let card = state.get('trash').get(trashchoice.index);
+      if (card === undefined) {
+        state = state.set('error', `Unexpected Lurker trash choice ${trashchoice.index}`);
+        return state;
+      }
+      state = state.set('trash', state.get('trash').remove(trashchoice.index));
+      state = state.set('discard', state.get('trash').push(card));
+      return state;
+    } else {
+      state = state.set('error', `Unexpected Lurker choice ${choice.choice}`);
+      return state;
+    }
+  }
+}));
+
 
 export const Beggar: Card = register_kingdom_card(make_card({
   name: 'Beggar',
