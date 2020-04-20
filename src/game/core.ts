@@ -21,6 +21,7 @@ type RawCard = {
   setup?: (state: GameState) => GameState,
   fn: Effect,
   cleanup?: (state: GameState, card: Card) => GameState,
+  discard?: (state: GameState, card: Card) => GameState,
   energy: number,
 };
 export type Card = Immutable.Record<RawCard>;
@@ -210,6 +211,8 @@ export function discard(state: GameState, index: number): GameState {
   }
   state = state.set('hand', state.get('hand').delete(index));
   state = state.set('discard', state.get('discard').push(card));
+  let fn = card.get('discard') || ((state, card) => state.set('discard', state.get('discard').push(card)));
+  state = fn(state, card);
   return state;
 }
 

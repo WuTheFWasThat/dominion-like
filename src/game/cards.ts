@@ -145,6 +145,22 @@ export const Horse: Card = register_kingdom_card(make_card({
   }
 }));
 
+export const Hound: Card = register_kingdom_card(make_card({
+  name: 'Hound',
+  energy: 0,
+  cost_range: [0, 2],
+  description: '+1 card.  When discarded, +1 card',
+  fn: function* (state: GameState) {
+    state = draw(state, 1);
+    return state;
+  },
+  discard: function(state: GameState, card: Card) {
+    state = draw(state, 1);
+    state = state.set('discard', state.get('discard').push(card));
+    return state;
+  }
+}));
+
 
 export const Chapel: Card = register_kingdom_card(make_card({
   name: 'Chapel',
@@ -228,6 +244,7 @@ export const ThroneRoom: Card = register_kingdom_card(make_card({
     if (card === undefined) {
       throw Error(`Tried to play ${index} which does not exist`);
     }
+    // TODO: use helper function for this
     state = state.set('hand', state.get('hand').remove(index));
     state = yield* card.get('fn')(state);
     state = yield* card.get('fn')(state);
@@ -247,6 +264,7 @@ export const Vassal: Card = register_kingdom_card(make_card({
     if (card === null) {
       return state;
     }
+    // TODO: use helper function for this
     state = yield* card.get('fn')(state);
     state = state.set('discard', state.get('discard').push(card));
     return state;
