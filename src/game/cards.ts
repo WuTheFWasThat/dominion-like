@@ -21,13 +21,9 @@ function register_kingdom_event(card: Card) {
 export const Copper: Card = make_card({
   name: 'Copper',
   energy: 0,
-  description: (state: GameState) => {
-    let amt = 1 + (state.get('extra').get('coppersmith_plays') || 0);
-    return '+$' + amt;
-  },
+  description: '+$1',
   fn: function* (state: GameState) {
-    let amt = 1 + (state.get('extra').get('coppersmith_plays') || 0);
-    return state.set('money', state.get('money') + amt);
+    return state.set('money', state.get('money') + 1);
   }
 });
 
@@ -157,17 +153,45 @@ export const Library: Card = register_kingdom_card(make_card({
   }
 }));
 
-export const Coppersmith: Card = register_kingdom_card(make_card({
-  name: 'Coppersmith',
-  energy: 2,
-  description: 'All coppers give an additional $1',
+export const FoolsGold: Card = register_kingdom_card(make_card({
+  name: 'Fool\'s Gold',
+  energy: 0,
+  cost_range: [2, 6],
+  description: (state: GameState) => {
+    let amt = state.get('extra').get('fools_gold');
+    return '+$' + amt + ', all Fool\'s Golds give an additional $1';
+  },
   setup: function(state: GameState) {
-    state = state.set('extra', state.get('extra').set('coppersmith_plays', 0));
+    state = state.set('extra', state.get('extra').set('fools_gold', 0));
     return state;
   },
   fn: function* (state: GameState) {
     let extra = state.get('extra');
-    state = state.set('extra', extra.set('coppersmith_plays', extra.get('coppersmith_plays') + 1));
+    let n = extra.get('fools_gold');
+    state = state.set('extra', extra.set('fools_gold', n + 1));
+    state = state.set('money', state.get('money') + n);
+    return state;
+  }
+}));
+
+export const Coppersmith: Card = register_kingdom_card(make_card({
+  name: 'Coppersmith',
+  energy: 2,
+  description: 'All coppers in hand give an additional $1',
+  fn: function* (state: GameState) {
+    for (let i = 0; i < state.get('hand').size; i++) {
+      let card = state.get('hand').get(i) as Card;
+      if (card.get('name').split('+')[0] !== 'Copper') {
+        continue;
+      }
+      let val = (parseInt((card.get('description') as string).split('$')[1])) + 1;
+      card = card.set('fn', function* (state: GameState) {
+        return state.set('money', state.get('money') + val);
+      });
+      card = card.set('description', '+$' + val);
+      card = card.set('name', 'Copper+' + (val-1));
+      state = state.set('hand', state.get('hand').set(i, card));
+    }
     return state;
   }
 }));

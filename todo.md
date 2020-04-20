@@ -29,3 +29,12 @@ implement situations
 coppersmith change to increase only coppers in hand
 
 rats
+
+simple +1 card starter
+
+event that gives a bunch of money, but gives situation that makes cards cost 1 more when bought
+
+card that draws +1 card each time it's played
+
+event ideas:
+  the next card you buy goes in hand

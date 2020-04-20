@@ -20,6 +20,7 @@ type RawCard = {
   cost_range?: [number, number],
   setup?: (state: GameState) => GameState,
   fn: Effect,
+  cleanup?: (state: GameState, card: Card) => GameState,
   energy: number,
 };
 export type Card = Immutable.Record<RawCard>;
@@ -114,9 +115,9 @@ export function initial_state(seed: number | null): GameState {
     let cost_range = card.get('cost_range') || [0, 5];
     let setup = card.get('setup');
     if (setup) {
-      // console.log('setting up', state.get('extra').toJS());
+      console.log('setting up', state.get('extra').toJS());
       state = setup(state);
-      // console.log(state.get('extra').toJS());
+      console.log(state.get('extra').toJS());
     }
     state = state.set('supply', state.get('supply').push(
       Immutable.Record({
@@ -243,7 +244,8 @@ export function play(index: number): Effect {
       throw Error(`Tried to play ${index} which does not exist`);
     }
     state = yield* card.get('fn')(state);
-    state = state.set('discard', state.get('discard').push(card));
+    let cleanup = card.get('cleanup') || ((state, card) => state.set('discard', state.get('discard').push(card)));
+    state = cleanup(state, card);
     return state;
   }
 }
