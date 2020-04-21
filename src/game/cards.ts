@@ -663,7 +663,7 @@ export const Favor: Card = register_kingdom_event(make_card({
   cost_range: [1, 3],
   description: 'Play a card from supply costing up to 7',
   fn: function* (state: GameState) {
-    let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to gain for Favor'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
+    let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to play for Favor'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
     let supplyCard = game.getSupplyCard(state, choice.cardname, 'supply').supplyCard;
     if (supplyCard === null) {
       state = state.set('error', `${choice.cardname} not found`);
@@ -683,6 +683,7 @@ export const Inflation: Card = register_kingdom_event(make_card({
   energy: 0,
   cost_range: [0, 0],
   description: 'Once per game, gain $20.  All cards cost $1 extra',
+  // Crazy version:  'Gain $20.  All cards and events cost $1 extra', increases cost of itself and reboot..
   fn: function* (state: GameState) {
     state = state.set('money', state.get('money') + 20);
     let n = state.get('supply').size;
