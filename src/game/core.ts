@@ -138,6 +138,7 @@ export function initial_state(seed: number | null): GameState {
   let actual_seed = seed === null ? random.createEntropy()[0] : seed;
   const mt = random.MersenneTwister19937.seed(actual_seed);
   let state: GameState = InitialState();
+  // TODO: sometimes include territory/diamond, colony/platinum
   const kingdom = random.sample(mt, Object.keys(cards.KINGDOM_CARDS), 8).map((k) => cards.KINGDOM_CARDS[k]);
   kingdom.forEach((card) => {
     let cost_range = card.get('cost_range') || [1, 5];

@@ -86,6 +86,27 @@ export const Gold: Card = make_card({
   }
 });
 
+export const Diamond: Card = make_card({
+  name: 'Diamond',
+  energy: 0,
+  cost_range: [10, 10],
+  description: '+$4',
+  fn: function* (state: GameState) {
+    return state.set('money', state.get('money') + 4);
+  }
+});
+
+
+export const Platinum: Card = make_card({
+  name: 'Platinum',
+  energy: 0,
+  cost_range: [15, 15],
+  description: '+$5',
+  fn: function* (state: GameState) {
+    return state.set('money', state.get('money') + 5);
+  }
+});
+
 
 export const Estate: Card = make_card({
   name: 'Estate',
@@ -113,6 +134,27 @@ export const Province: Card = make_card({
     return state.set('victory', state.get('victory') + 3);
   }
 });
+
+export const Territory: Card = make_card({
+  name: 'Territory',
+  energy: 1,
+  cost_range: [10, 10],
+  description: '+4 victory points',
+  fn: function* (state: GameState) {
+    return state.set('victory', state.get('victory') + 4);
+  }
+});
+
+export const Colony: Card = make_card({
+  name: 'Colony',
+  energy: 1,
+  cost_range: [15, 15],
+  description: '+5 victory points',
+  fn: function* (state: GameState) {
+    return state.set('victory', state.get('victory') + 5);
+  }
+});
+
 
 export const Donkey: Card = make_card({
   name: 'Donkey',
@@ -142,6 +184,46 @@ export const Gardens: Card = register_kingdom_card(make_card({
     return state.set('victory', state.get('victory') + Math.floor(n / 10));
   }
 }));
+
+export const SilkRoad: Card = register_kingdom_card(make_card({
+  name: 'Silk Road',
+  energy: 2,
+  description: '+1 victory point for every Silk Road in your deck',
+  fn: function* (state: GameState) {
+    let n = game.count_in_deck(state, (card) => card.get('name') === 'Silk Road');
+    return state.set('victory', state.get('victory') + n);
+  }
+}));
+
+
+export const Park: Card = register_kingdom_card(make_card({
+  name: 'Park',
+  energy: 1,
+  cost_range: [8, 16],
+  description: '+1 victory point for every card in your hand',
+  fn: function* (state: GameState) {
+    let n = game.count_in_deck(state, (card) => card.get('name') === 'Silk Road');
+    return state.set('victory', state.get('victory') + n);
+  }
+}));
+
+export const OilWell: Card = register_kingdom_card(make_card({
+  name: 'Oil Well',
+  energy: 0,
+  cost_range: [8, 16],
+  description: '+3 cards, +$3, +3 victory points, increase energy cost by 1',
+  fn: function* (state: GameState) {
+    state = yield* draw(state, 3);
+    state = state.set('money', state.get('money') + 3);
+    return state.set('victory', state.get('victory') + 3);
+  },
+  cleanup: function*(state: GameState, card: Card) {
+    card = card.set('energy', card.get('energy') + 1);
+    state = state.set('discard', state.get('discard').push(card));
+    return state;
+  }
+}));
+
 
 export const Duke: Card = register_kingdom_card(make_card({
   name: 'Duke',
@@ -370,25 +452,44 @@ export const Steward: Card = register_kingdom_card(make_card({
 }));
 
 
-/*
 export const Sacrifice: Card = register_kingdom_card(make_card({
   name: 'Sacrifice',
   energy: 0,
   description: 'Choose a card from your hand, play it, and trash it.',
   fn: function* (state: GameState) {
-    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to trash for Mouse', limit: 1}]) as game.PickHandChoice;
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to play and trash for Sacrifice', limit: 1}]) as game.PickHandChoice;
     if (choice.indices.length === 0) {
       return state;
     } else if (choice.indices.length > 1) {
       throw Error('Something went wrong');
     }
     let index = choice.indices[0];
-    let card = choice.indices.
-    state = yield* trash_from_deck(state, choice.indices, 'hand');
+    let card = state.get('hand').get(index) as Card;
+    state = state.set('hand', state.get('hand').remove(index));
+    state = yield* play(state, card);
+    state = yield* trash(state, card);
     return state;
   }
 }));
-*/
+
+
+export const DualWield: Card = register_kingdom_card(make_card({
+  name: 'Dual Wield',
+  energy: 1,
+  description: 'Choose a card from your hand, add another copy into your hand.',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to copy for Dual Wield', limit: 1}]) as game.PickHandChoice;
+    if (choice.indices.length === 0) {
+      return state;
+    } else if (choice.indices.length > 1) {
+      throw Error('Something went wrong');
+    }
+    let index = choice.indices[0];
+    let card = state.get('hand').get(index) as Card;
+    state = state.set('hand', state.get('hand').push(card));
+    return state;
+  }
+}));
 
 
 export const Beggar: Card = register_kingdom_card(make_card({
