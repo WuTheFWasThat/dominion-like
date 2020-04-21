@@ -20,6 +20,7 @@ type RawCard = {
   cost_range?: [number, number],
   setup?: (state: GameState) => GameState,
   fn: Effect,
+  extra?: Immutable.Map<string, any>,
   cleanup?: (state: GameState, card: Card) => GameState,
   discard?: (state: GameState, card: Card) => GameState,
   energy: number,

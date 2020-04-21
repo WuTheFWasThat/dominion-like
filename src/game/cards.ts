@@ -1,3 +1,4 @@
+import Immutable from 'immutable';
 import { make_card, Card, GameState, draw, discard, trash, trash_event, gain, scry } from  './core';
 import * as game from  './core';
 
@@ -54,6 +55,7 @@ function register_kingdom_situation(card: Card) {
 export const Copper: Card = make_card({
   name: 'Copper',
   energy: 0,
+  extra: Immutable.Map({ value: 1 }), // used for coppersmith
   description: '+$1',
   fn: function* (state: GameState) {
     return state.set('money', state.get('money') + 1);
@@ -372,17 +374,20 @@ export const FoolsGold: Card = register_kingdom_card(make_card({
   energy: 0,
   cost_range: [1, 2],
   description: '+$0, increase $ this card gives by 1',
+  extra: Immutable.Map({ value: 0 }), // used for coppersmith
   fn: function* (state: GameState) {
     return state;
   },
   cleanup: function(state: GameState, card: Card) {
-    let val = (parseInt((card.get('description') as string).split('$')[1].split(',')[0])) + 1;
-    console.log(val);
+    let extra = card.get('extra');
+    if (extra === undefined) { throw new Error('Fools gold should have value field'); }
+    let val = extra.get('value') + 1;
     card = card.set('fn', function* (state: GameState) {
       return state.set('money', state.get('money') + val);
     });
     card = card.set('description', '+$' + val + ', increase $ this card gives by 1');
     card = card.set('name', 'FoolsGold+' + val);
+    card = card.set('extra', extra.set('value', val));
     state = state.set('discard', state.get('discard').push(card));
     return state;
   }
@@ -422,12 +427,17 @@ export const Coppersmith: Card = register_kingdom_card(make_card({
       if (card.get('name').split('+')[0] !== 'Copper') {
         continue;
       }
-      let val = (parseInt((card.get('description') as string).split('$')[1])) + 1;
+      let extra = card.get('extra');
+      if (extra === undefined) {
+        throw new Error('Copper should have extra');
+      }
+      let val = extra.get('value') + 1;
       card = card.set('fn', function* (state: GameState) {
         return state.set('money', state.get('money') + val);
       });
       card = card.set('description', '+$' + val);
       card = card.set('name', 'Copper+' + (val-1));
+      card = card.set('extra', extra.set('value', val));
       state = state.set('hand', state.get('hand').set(i, card));
     }
     return state;
@@ -483,7 +493,7 @@ export const Cellar: Card = register_kingdom_card(make_card({
   name: 'Cellar',
   energy: 0,
   cost_range: [1, 3],
-  description: 'Discard any number of cards, draw that many',
+  description: 'Discard any number of cards from your hand, draw that many',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to discard for Cellar'}]) as game.PickHandChoice;
     state = discard(state, choice.indices);

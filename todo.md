@@ -23,3 +23,8 @@ trash a card from your discard pile
 having cards go in play, and be discarded when you reboot?
 
 event that upgrades reboot (+1 card)?
+
+probabilistic cards
+gambit:
+  p depends on some state
+  either gain energy or gain vp
