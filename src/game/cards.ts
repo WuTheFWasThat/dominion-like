@@ -239,7 +239,7 @@ export const Chapel: Card = register_kingdom_card(make_card({
   description: 'Trash any number of cards from your hand',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
-    state = trash(state, choice.indices, 'hand');
+    state = yield* trash(choice.indices, 'hand')(state);
     return state;
   }
 }));
@@ -297,7 +297,7 @@ export const Steward: Card = register_kingdom_card(make_card({
         state = state.set('error', 'Cannot trash more than 2 cards with Steward');
         return state;
       }
-      state = trash(state, trashchoice.indices, 'hand');
+      state = yield* trash(trashchoice.indices, 'hand')(state);
       return state;
     } else {
       state = state.set('error', `Unexpected Steward choice ${choice.choice}`);
@@ -351,7 +351,7 @@ export const Mouse: Card = register_kingdom_card(make_card({
     } else if (choice.indices.length > 1) {
       throw Error('Something went wrong');
     }
-    state = trash(state, choice.indices, 'hand');
+    state = yield* trash(choice.indices, 'hand')(state);
     state = draw(state, 1);
     return state;
   }
@@ -760,6 +760,20 @@ export const MarketHours: Card = register_kingdom_situation(make_card({
   description: 'You may only buy cards when energy spent is a multiple of 3',
   fn: function* (state: GameState) {
     state = state.set('extra', state.get('extra').set('market_hours', true))
+    return state;
+  }
+}));
+
+export const JunkYard: Card = register_kingdom_situation(make_card({
+  name: 'Junk Yard',
+  energy: 0,
+  description: 'Whenever you trash a card, gain a silver',
+  fn: function* (state: GameState) {
+    function* hook(state: GameState) {
+      state = state.set('discard', state.get('discard').push(Silver));
+      return state;
+    }
+    state = state.set('trash_hooks', state.get('trash_hooks').push(hook))
     return state;
   }
 }));

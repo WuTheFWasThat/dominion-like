@@ -49,6 +49,7 @@ export type GameState = Immutable.Record<{
   events: Immutable.List<SupplyCard>,
   situations: Immutable.List<Card>,
   turn_hooks: Immutable.List<Effect>,
+  trash_hooks: Immutable.List<Effect>,
   log: Immutable.List<string>,
   extra: Immutable.Map<string, any>,
   random: random.MersenneTwister19937,
@@ -110,6 +111,7 @@ export const InitialState = Immutable.Record({
     cards.Triumph,
   ]),
   turn_hooks: Immutable.List([]),
+  trash_hooks: Immutable.List([]),
   log: Immutable.List([]),
   extra: Immutable.Map<string, any>([]),
   random: null as any,
@@ -237,22 +239,32 @@ export function discard(state: GameState, indices: Array<number>): GameState {
   return state;
 }
 
-export function trash(state: GameState, indices: Array<number>, type: DeckType): GameState {
-  indices = indices.slice().sort((a,b) => b-a);
-  let trashed_cards = [];
-  for (let i = 0; i < indices.length; i++) {
-    let index = indices[i];
-    let card = state.get(type).get(index);
-    if (card === undefined) {
-      throw Error(`${type} card out of bounds ${index}`);
+export function trash(indices: Array<number>, type: DeckType): Effect {
+  return function*(state: GameState) {
+    indices = indices.slice().sort((a,b) => b-a);
+    let trashed_cards = [];
+    let hooks = state.get('trash_hooks');
+    for (let i = 0; i < indices.length; i++) {
+      let index = indices[i];
+      let card = state.get(type).get(index);
+      if (card === undefined) {
+        throw Error(`${type} card out of bounds ${index}`);
+      }
+      state = state.set(type, state.get(type).remove(index));
+      trashed_cards.push(card);
+      state = state.set('trash', state.get('trash').push(card));
+      for (let j = 0; j < hooks.size; j++) {
+        let hook = hooks.get(j);
+        if (hook === undefined) {
+          throw Error(`Unexpected undefined hook ${j}`);
+        }
+        state = yield* hook(state);
+      }
     }
-    state = state.set(type, state.get(type).remove(index));
-    trashed_cards.push(card);
-    state = state.set('trash', state.get('trash').push(card));
+    let names = (trashed_cards).map((card) => card.get('name')).join(', ');
+    state = state.set('log', state.get('log').push(`Trashed ${names}`));
+    return state;
   }
-  let names = (trashed_cards).map((card) => card.get('name')).join(', ');
-  state = state.set('log', state.get('log').push(`Trashed ${names}`));
-  return state;
 }
 
 export function gain(state: GameState, cardName: string): GameState {
@@ -503,10 +515,12 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
       state = state.set('error', 'Bad card');
       return state
     }
+    /*
     if (state.get('energy') < card.get('energy')) {
       state = state.set('error', 'Not enough energy');
       return state;
     }
+    */
     state = state.set('error', null);
     state = state.set('log', state.get('log').push(`Played a ${card.get('name')}`));
     state = await applyEffect(state, play(play_choice.index), player);
