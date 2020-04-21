@@ -26,5 +26,8 @@ event that upgrades reboot (+1 card)?
 
 probabilistic cards
 gambit:
-  p depends on some state
-  either gain energy or gain vp
+  0 energy
+  draw 2 cards.  if either is an estate, gain 3 vp.  otherwise, gain 1 energy
+
+duke:
+  + vp equal to number of duchies in deck

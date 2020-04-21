@@ -690,8 +690,9 @@ export const Greed: Card = register_kingdom_event(make_card({
   name: 'Greed',
   energy: 0,
   cost_range: [1, 25],
-  description: 'Convert all your $ to victory points.',
+  description: 'Convert all your $ to victory points.  Trash this.',
   fn: function* (state: GameState) {
+    state = trash_event(state, 'Greed');
     state = state.set('victory', state.get('victory') + state.get('money'));
     return state.set('money', 0);
   },
