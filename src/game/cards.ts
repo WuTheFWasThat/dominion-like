@@ -143,6 +143,40 @@ export const Gardens: Card = register_kingdom_card(make_card({
   }
 }));
 
+export const Duke: Card = register_kingdom_card(make_card({
+  name: 'Duke',
+  energy: 1,
+  description: '+N victory points, where N is the number of duchies in your deck',
+  fn: function* (state: GameState) {
+    let n = game.count_in_deck(state, (card) => card.get('name') === 'Duchy');
+    return state.set('victory', state.get('victory') + n);
+  }
+}));
+
+export const FoolsYard: Card = register_kingdom_card(make_card({
+  name: 'Fool\'s Yard',
+  energy: 1,
+  cost_range: [3, 5],
+  description: '+0 VP, increase VP gain this card gives by 1',
+  extra: Immutable.Map({ value: 0 }), // used for coppersmith
+  fn: function* (state: GameState) {
+    return state;
+  },
+  cleanup: function*(state: GameState, card: Card) {
+    let extra = card.get('extra');
+    if (extra === undefined) { throw new Error('Fools gold should have value field'); }
+    let val = extra.get('value') + 1;
+    card = card.set('fn', function* (state: GameState) {
+      return state.set('victory', state.get('victory') + val);
+    });
+    card = card.set('description', '+' + val + ' VP, increase VP this card gives by 1');
+    card = card.set('name', 'Fool\'s Yard +' + val);
+    card = card.set('extra', extra.set('value', val));
+    state = state.set('discard', state.get('discard').push(card));
+    return state;
+  }
+}));
+
 
 export const Workshop: Card = register_kingdom_card(make_card({
   name: 'Workshop',
@@ -390,7 +424,7 @@ export const FoolsGold: Card = register_kingdom_card(make_card({
       return state.set('money', state.get('money') + val);
     });
     card = card.set('description', '+$' + val + ', increase $ this card gives by 1');
-    card = card.set('name', 'FoolsGold+' + val);
+    card = card.set('name', 'Fool\'s Gold +' + val);
     card = card.set('extra', extra.set('value', val));
     state = state.set('discard', state.get('discard').push(card));
     return state;
@@ -440,7 +474,7 @@ export const Coppersmith: Card = register_kingdom_card(make_card({
         return state.set('money', state.get('money') + val);
       });
       card = card.set('description', '+$' + val);
-      card = card.set('name', 'Copper+' + (val-1));
+      card = card.set('name', 'Copper +' + (val-1));
       card = card.set('extra', extra.set('value', val));
       state = state.set('hand', state.get('hand').set(i, card));
     }
