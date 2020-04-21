@@ -136,10 +136,10 @@ export const Mule: Card = make_card({
 export const Gardens: Card = register_kingdom_card(make_card({
   name: 'Gardens',
   energy: 1,
-  description: '+N victory points, where N is the number of gardens in your deck',
+  description: '+1 victory point for every 10 cards in your deck',
   fn: function* (state: GameState) {
-    let n = game.count_in_deck(state, (card) => card.get('name') === 'Gardens');
-    return state.set('victory', state.get('victory') + n);
+    let n = game.count_in_deck(state, (card) => true);
+    return state.set('victory', state.get('victory') + Math.floor(n / 10));
   }
 }));
 
