@@ -370,6 +370,28 @@ export const Library: Card = register_kingdom_card(make_card({
 export const FoolsGold: Card = register_kingdom_card(make_card({
   name: 'Fool\'s Gold',
   energy: 0,
+  cost_range: [1, 2],
+  description: '+$0, increase $ this card gives by 1',
+  fn: function* (state: GameState) {
+    return state;
+  },
+  cleanup: function(state: GameState, card: Card) {
+    let val = (parseInt((card.get('description') as string).split('$')[1].split(',')[0])) + 1;
+    console.log(val);
+    card = card.set('fn', function* (state: GameState) {
+      return state.set('money', state.get('money') + val);
+    });
+    card = card.set('description', '+$' + val + ', increase $ this card gives by 1');
+    card = card.set('name', 'FoolsGold+' + val);
+    state = state.set('discard', state.get('discard').push(card));
+    return state;
+  }
+}));
+
+/*
+export const FoolsGold: Card = register_kingdom_card(make_card({
+  name: 'Fool\'s Gold',
+  energy: 0,
   cost_range: [3, 6],
   description: (state: GameState) => {
     let amt = state.get('extra').get('fools_gold');
@@ -387,6 +409,8 @@ export const FoolsGold: Card = register_kingdom_card(make_card({
     return state;
   }
 }));
+*/
+
 
 export const Coppersmith: Card = register_kingdom_card(make_card({
   name: 'Coppersmith',
@@ -658,7 +682,7 @@ export const Greed: Card = register_kingdom_event(make_card({
   cost_range: [1, 25],
   description: 'Convert all your $ to victory points.',
   fn: function* (state: GameState) {
-    state.set('victory', state.get('victory') + state.get('money'));
+    state = state.set('victory', state.get('victory') + state.get('money'));
     return state.set('money', 0);
   },
 }));
