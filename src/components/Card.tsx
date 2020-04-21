@@ -27,7 +27,9 @@ class CardComponent extends React.Component<Props, State> {
     return (
       <div className={classNames.join(" ")} onClick={this.props.onClick} data-tip={description}>
         <div className="center" style={{cursor: 'default'}}>{this.props.card.get('name')}</div>
-        <div className="center">{this.props.card.get('energy')} <i className="fa fa-bolt"></i></div>
+        <div className="center">
+           <i className="fa fa-bolt"></i> {this.props.card.get('energy')}
+        </div>
         <ReactTooltip />
       </div>
 

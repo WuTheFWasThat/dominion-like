@@ -150,26 +150,10 @@ class App extends React.Component<AppProps, AppState> {
         <br/>
 
         <h2>
-            Situations
-        </h2>
-        <div style={{display: "flex", flexDirection: "row", width: '100%'}}>
-          <div style={{flexBasis: '100%', flexGrow: 0, padding: '10px'}}>
-            <div>
-              {this.props.state.get('situations').map((situation, i) => {
-                return (
-                  <SituationComponent key={i} state={this.props.state} card={situation}/>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-        <br/>
-
-        <h2>
             Supply
         </h2>
         <div style={{display: "flex", flexDirection: "row", width: '100%'}}>
-          <div style={{flexBasis: '50%', flexGrow: 0, padding: '10px'}}>
+          <div style={{flexBasis: '33%', flexGrow: 0, padding: '10px'}}>
             <h3>
             Cards
             </h3>
@@ -203,7 +187,7 @@ class App extends React.Component<AppProps, AppState> {
             </div>
           </div>
 
-          <div style={{flexBasis: '50%', flexGrow: 0, padding: '10px'}}>
+          <div style={{flexBasis: '33%', flexGrow: 0, padding: '10px'}}>
             <h3>
                 Events
             </h3>
@@ -223,6 +207,51 @@ class App extends React.Component<AppProps, AppState> {
                   <span key={i}>
                     ${event_card.get('cost')} <CardComponent key={i} state={this.props.state} card={event_card.get('card')} onClick={onClick}/>
                   </span>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{flexBasis: '33%', flexGrow: 0, padding: '10px'}}>
+            <h3>
+                Situations
+            </h3>
+            <br/>
+            <div>
+              {this.props.state.get('situation_supply').map((situation_supply, i) => {
+                let onClick;
+                if (this.props.question && game.isActionQuestion(this.props.question)) {
+                  onClick = () => {
+                    this.props.choice_cb({
+                      type: 'buy_situation',
+                      name: situation_supply.get('situation').get('name'),
+                    } as game.BuySituationChoice);
+                  }
+                }
+                return (
+                  <span key={i}>
+                    ${situation_supply.get('cost')}
+                      &nbsp;
+                    <i className="fa fa-bolt"></i>{situation_supply.get('energy')}
+                      &nbsp;
+                    <SituationComponent key={i} state={this.props.state} situation={situation_supply.get('situation')} onClick={onClick}/>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        <br/>
+
+        <h2>
+            Situations
+        </h2>
+        <div style={{display: "flex", flexDirection: "row", width: '100%'}}>
+          <div style={{flexBasis: '100%', flexGrow: 0, padding: '10px'}}>
+            <div>
+              {this.props.state.get('situations').map((situation, i) => {
+                return (
+                  <SituationComponent key={i} state={this.props.state} situation={situation}/>
                 );
               })}
             </div>

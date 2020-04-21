@@ -5,14 +5,14 @@ import * as game from '../game/core';
 
 type Props = {
   state: game.GameState,
-  card: game.Situation,
+  situation: game.Situation,
   onClick?: () => void,
   classNames?: Array<string>
 };
 type State = {
 };
 
-class CardComponent extends React.Component<Props, State> {
+class SituationComponent extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -22,12 +22,11 @@ class CardComponent extends React.Component<Props, State> {
   render() {
     let classNames = (this.props.classNames || []).slice();
     classNames.push("card");
-    let card_desc = this.props.card.get('description');
+    let card_desc = this.props.situation.get('description');
     let description: string = (typeof card_desc === "string") ?  card_desc : card_desc(this.props.state);
     return (
       <div className={classNames.join(" ")} onClick={this.props.onClick} data-tip={description}>
-        <div className="center" style={{cursor: 'default'}}>{this.props.card.get('name')}</div>
-        <div className="center">{this.props.card.get('energy')} <i className="fa fa-bolt"></i></div>
+        <div className="center" style={{cursor: 'default'}}>{this.props.situation.get('name')}</div>
         <ReactTooltip />
       </div>
 
@@ -35,4 +34,4 @@ class CardComponent extends React.Component<Props, State> {
   }
 }
 
-export default CardComponent;
+export default SituationComponent;

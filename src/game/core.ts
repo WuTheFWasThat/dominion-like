@@ -18,14 +18,19 @@ export type EffectFn = (state: GameState) => Effect;
 type RawSituation = {
   name: string,
   description: string | ((state: GameState) => string),
-  setup: EffectFn,
+  fn: EffectFn,
+  setup?: (state: GameState) => GameState,
   extra?: Immutable.Map<string, any>,
-  energy: number,
+  energy_range?: [number, number],
+  cost_range?: [number, number],
 };
 export type Situation = Immutable.Record<RawSituation>;
 export function make_situation(raw: RawSituation): Situation {
   return Immutable.Record<RawSituation>(raw)();
 }
+export type SupplySituation = Immutable.Record<{
+  energy: number, cost: number, situation: Situation
+}>;
 type RawCard = {
   name: string,
   description: string | ((state: GameState) => string),
@@ -59,6 +64,7 @@ export type GameState = Immutable.Record<{
   trash: Immutable.List<Card>,
   supply: Immutable.List<SupplyCard>,
   events: Immutable.List<SupplyCard>,
+  situation_supply: Immutable.List<SupplySituation>,
   situations: Immutable.List<Situation>,
   turn_hooks: Immutable.List<EffectFn>,
   trash_hooks: Immutable.List<(state: GameState, card: Card) => Effect>,
@@ -116,6 +122,8 @@ export const InitialState = Immutable.Record({
       cost: 0,
     })(),
   ]),
+  situation_supply: Immutable.List([
+  ]),
   draw: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Donkey, cards.Donkey]),
   discard: Immutable.List([]),
   hand: Immutable.List([]),
@@ -163,9 +171,36 @@ export function initial_state(seed: number | null): GameState {
       })()
     ));
   });
+  for (let event of state.get('events')) {
+    let setup = event.get('card').get('setup');;
+    if (setup) {
+      // console.log('setting up', state.get('extra').toJS());;
+      state = setup(state);
+      // console.log(state.get('extra').toJS());
+    }
+  }
   const kingdom_situations = random.sample(mt, Object.keys(cards.KINGDOM_SITUATIONS), 1).map((k) => cards.KINGDOM_SITUATIONS[k]);
   kingdom_situations.forEach((situation) => {
     state = state.set('situations', state.get('situations').push(situation));
+  });
+
+  const kingdom_situations_to_buy = random.sample(mt, Object.keys(cards.KINGDOM_SITUATIONS_TO_BUY), 1).map((k) => cards.KINGDOM_SITUATIONS_TO_BUY[k]);
+  kingdom_situations_to_buy.forEach((situation) => {
+    let cost_range = situation.get('cost_range') || [0, 0];
+    let energy_range = situation.get('energy_range') || [5, 15];
+    let setup = situation.get('setup');
+    if (setup) {
+      // console.log('setting up', state.get('extra').toJS());;
+      state = setup(state);
+      // console.log(state.get('extra').toJS());
+    }
+    state = state.set('situation_supply', state.get('situation_supply').push(
+      Immutable.Record({
+        situation: situation,
+        cost: random.integer(cost_range[0], cost_range[1])(mt),
+        energy: random.integer(energy_range[0], energy_range[1])(mt),
+      })()
+    ));
   });
 
   // useful for testing
@@ -370,6 +405,15 @@ function isEvent(choice: PlayerChoice): choice is EventChoice {
     return choice.type === 'event';
 }
 
+export interface BuySituationChoice extends PlayerChoice {
+  type: 'buy_situation';
+  name: string;
+};
+function isBuySituation(choice: PlayerChoice): choice is BuySituationChoice {
+    return choice.type === 'buy_situation';
+}
+
+
 export interface PickHandQuestion extends PlayerQuestion {
   type: 'pickhand',
   message: string,
@@ -469,6 +513,20 @@ export function getSupplyCard(state: GameState, cardName: string, type: BuyType)
   return { index: -1, supplyCard: null };
 }
 
+export function getSupplySituation(state: GameState, name: string): { index: number, supplySituation: SupplySituation | null} {
+  for (let i = 0; i < state.get('situation_supply').size; i++) {
+    const supplySituation = state.get('situation_supply').get(i);
+    if (supplySituation === undefined) {
+      throw Error(`Supply card out of bounds ${i}`);
+    }
+    if (supplySituation.get('situation').get('name') === name) {
+      return { index: i, supplySituation: supplySituation };
+    }
+  }
+  return { index: -1, supplySituation: null };
+}
+
+
 /*
 function setSupplyCardCost(state: GameState, cardName: string, cost: number, type: BuyType): GameState {
   for (let i = 0; i < state.get(type).size; i++) {
@@ -546,8 +604,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     // buys cost energy too
     state = state.set('energy', state.get('energy') + supply_card.get('card').get('energy'));
   } else if (isPlay(choice)) {
-    let play_choice: PlayChoice = (choice as PlayChoice);
-    let card = state.get('hand').get(play_choice.index);
+    let card = state.get('hand').get(choice.index);
     if (card === undefined) {
       state = state.set('error', 'Bad card');
       return state
@@ -560,8 +617,25 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     */
     state = state.set('error', null);
     state = state.set('log', state.get('log').push(`Played a ${card.get('name')}`));
-    state = await applyEffect(state, (state) => play_from_hand(state, play_choice.index), player);
+    state = await applyEffect(state, (state) => play_from_hand(state, choice.index), player);
     state = state.set('energy', state.get('energy') + card.get('energy'));
+  } else if (isBuySituation(choice)) {
+    let result = getSupplySituation(state, choice.name);
+    const supply_situation = result.supplySituation;
+    if (supply_situation === null) {
+      state = state.set('error', 'Situation not in supply?');
+      return state;
+    }
+    if (state.get('money') < supply_situation.get('cost')) {
+      state = state.set('error', 'Not enough money');
+      return state;
+    }
+    state = state.set('error', null);
+    state = state.set('money', state.get('money') - supply_situation.get('cost'));
+    state = state.set('energy', state.get('energy') + supply_situation.get('energy'));
+    state = state.set('log', state.get('log').push(`Bought a ${choice.name}`));
+    state = await applyEffect(state, supply_situation.get('situation').get('fn'), player);
+    state = state.set('situation_supply', state.get('situation_supply').remove(result.index));
   } else {
     state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));
   }
@@ -573,7 +647,7 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
 
   await player.next(null as any);  // TODO: hmm
   for (let situation of state.get('situations')) {
-    state = await applyEffect(state, situation.get('setup'), player);
+    state = await applyEffect(state, situation.get('fn'), player);
   }
   while (!state.get('ended')) {
     let prevstate = state;

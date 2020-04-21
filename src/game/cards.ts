@@ -12,6 +12,7 @@ import * as game from  './core';
 export let KINGDOM_CARDS: {[name: string]: Card} = {};
 export let KINGDOM_EVENTS: {[name: string]: Card} = {};
 export let KINGDOM_SITUATIONS: {[name: string]: Situation} = {};
+export let KINGDOM_SITUATIONS_TO_BUY: {[name: string]: Situation} = {};
 
 
 function register_kingdom_card(card: Card) {
@@ -22,6 +23,9 @@ function register_kingdom_card(card: Card) {
     throw new Error(`Already registered ${card.get('name')}`);
   }
   if (KINGDOM_SITUATIONS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_SITUATIONS_TO_BUY[card.get('name')]) {
     throw new Error(`Already registered ${card.get('name')}`);
   }
   KINGDOM_CARDS[card.get('name')] = card;
@@ -36,6 +40,9 @@ function register_kingdom_event(card: Card) {
     throw new Error(`Already registered ${card.get('name')}`);
   }
   if (KINGDOM_SITUATIONS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_SITUATIONS_TO_BUY[card.get('name')]) {
     throw new Error(`Already registered ${card.get('name')}`);
   }
   KINGDOM_EVENTS[card.get('name')] = card;
@@ -53,9 +60,30 @@ function register_kingdom_situation(card: Situation) {
   if (KINGDOM_SITUATIONS[card.get('name')]) {
     throw new Error(`Already registered ${card.get('name')}`);
   }
+  if (KINGDOM_SITUATIONS_TO_BUY[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
   KINGDOM_SITUATIONS[card.get('name')] = card;
   return card;
 }
+
+function register_kingdom_situation_to_buy(card: Situation) {
+  if (KINGDOM_CARDS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_EVENTS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_SITUATIONS[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  if (KINGDOM_SITUATIONS_TO_BUY[card.get('name')]) {
+    throw new Error(`Already registered ${card.get('name')}`);
+  }
+  KINGDOM_SITUATIONS_TO_BUY[card.get('name')] = card;
+  return card;
+}
+
 
 export const Copper: Card = make_card({
   name: 'Copper',
@@ -526,8 +554,8 @@ export const Library: Card = register_kingdom_card(make_card({
   energy: 1,
   description: 'Draw until you have seven cards',
   fn: function* (state: GameState) {
-    while (state.get('hand').size < 7) {
-      state = yield* draw(state, 1);
+    if (state.get('hand').size < 7) {
+      state = yield* draw(state, 7 - state.get('hand').size);
     }
     return state;
   }
@@ -740,7 +768,14 @@ export const Madman: Card = register_kingdom_card(make_card({
 export const Reboot: Card = make_card({
   name: 'Reboot',
   energy: 1,
-  description: 'Set your money to $0, discard your hand, and draw 5 cards',
+  setup: function (state: GameState) {
+    state = state.set('extra', state.get('extra').set('reboot_cards', 5));
+    return state;
+  },
+  description: (state: GameState) => {
+    let cards = state.get('extra').get('reboot_cards');
+    return `Set your money to $0, discard your hand, and draw ${cards} cards`;
+  },
   fn: function* (state: GameState) {
     state = state.set('money', 0);
     let n = state.get('hand').size;
@@ -749,7 +784,7 @@ export const Reboot: Card = make_card({
       indices.push(i);
     }
     state = yield* discard(state, indices);
-    state = yield* draw(state, 5);
+    state = yield* draw(state, state.get('extra').get('reboot_cards'));
     return state;
   }
 });
@@ -902,9 +937,8 @@ export const Expedite: Card = register_kingdom_event(make_card({
 
 export const Triumph: Situation = make_situation({
   name: 'Triumph',
-  energy: 0,
   description: 'Once you reach 100 points, the game ends',
-  setup: function* (state: GameState) {
+  fn: function* (state: GameState) {
     function* hook(state: GameState) {
       if (state.get('victory') >= 100) {
         state = state.set('ended', true);
@@ -918,9 +952,8 @@ export const Triumph: Situation = make_situation({
 
 export const Riches: Situation = register_kingdom_situation(make_situation({
   name: 'Riches',
-  energy: 0,
   description: 'If you have $200, the game ends',
-  setup: function* (state: GameState) {
+  fn: function* (state: GameState) {
     function* hook(state: GameState) {
       if (state.get('money') >= 200) {
         state = state.set('ended', true);
@@ -934,9 +967,8 @@ export const Riches: Situation = register_kingdom_situation(make_situation({
 
 export const MarketHours: Situation = register_kingdom_situation(make_situation({
   name: 'Market Hours',
-  energy: 0,
   description: 'You may only buy cards when energy spent is a multiple of 3',
-  setup: function* (state: GameState) {
+  fn: function* (state: GameState) {
     state = state.set('extra', state.get('extra').set('market_hours', true))
     return state;
   }
@@ -944,9 +976,8 @@ export const MarketHours: Situation = register_kingdom_situation(make_situation(
 
 export const JunkYard: Situation = register_kingdom_situation(make_situation({
   name: 'Junk Yard',
-  energy: 0,
   description: 'Whenever you trash a card, gain a silver',
-  setup: function* (state: GameState) {
+  fn: function* (state: GameState) {
     function* hook(state: GameState, _card: Card) {
       state = state.set('discard', state.get('discard').push(Silver));
       return state;
@@ -958,9 +989,8 @@ export const JunkYard: Situation = register_kingdom_situation(make_situation({
 
 export const Compost: Situation = register_kingdom_situation(make_situation({
   name: 'Compost',
-  energy: 0,
   description: 'Whenever you trash a card, +1 VP',
-  setup: function* (state: GameState) {
+  fn: function* (state: GameState) {
     function* hook(state: GameState, _card: Card) {
       state = state.set('victory', state.get('victory') + 1);
       return state;
@@ -973,12 +1003,11 @@ export const Compost: Situation = register_kingdom_situation(make_situation({
 
 export const StrayHound: Situation = register_kingdom_situation(make_situation({
   name: 'Stray Hound',
-  energy: 0,
   description: (state: GameState) => {
     let x = state.get('extra').get('stray_hound');
     return `Every ten cards you draw, discard one card (${x}/10)`;
   },
-  setup: function* (state: GameState) {
+  fn: function* (state: GameState) {
     state = state.set('extra', state.get('extra').set('stray_hound', 0));
     function* hook(state: GameState): Effect {
       let x = (state.get('extra').get('stray_hound') + 1) % 10;
@@ -1001,6 +1030,17 @@ export const StrayHound: Situation = register_kingdom_situation(make_situation({
     return state;
   }
 }));
+
+export const Boost: Situation = register_kingdom_situation_to_buy(make_situation({
+  name: 'Boost',
+  description: 'Reboot gives 2 extra cards',
+  energy_range: [5, 15],
+  fn: function* (state: GameState) {
+    let extra = state.get('extra');
+    return state.set('extra', extra.set('reboot_cards', extra.get('reboot_cards') + 2));
+  }
+}));
+
 
 console.log(KINGDOM_CARDS);
 console.log(KINGDOM_EVENTS);
