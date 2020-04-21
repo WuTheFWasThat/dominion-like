@@ -741,15 +741,25 @@ export const Triumph: Card = make_card({
 export const Riches: Card = register_kingdom_situation(make_card({
   name: 'Riches',
   energy: 0,
-  description: 'If you have $1000, the game ends',
+  description: 'If you have $200, the game ends',
   fn: function* (state: GameState) {
     function* hook(state: GameState) {
-      if (state.get('money') >= 1000) {
+      if (state.get('money') >= 200) {
         state = state.set('ended', true);
       }
       return state;
     }
     state = state.set('turn_hooks', state.get('turn_hooks').push(hook))
+    return state;
+  }
+}));
+
+export const MarketHours: Card = register_kingdom_situation(make_card({
+  name: 'Market Hours',
+  energy: 0,
+  description: 'You may only buy cards when energy spent is a multiple of 3',
+  fn: function* (state: GameState) {
+    state = state.set('extra', state.get('extra').set('market_hours', true))
     return state;
   }
 }));

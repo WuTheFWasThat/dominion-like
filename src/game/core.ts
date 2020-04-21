@@ -457,6 +457,12 @@ export function count_in_deck(state: GameState, fn: (card: Card) => boolean): nu
 
 async function playTurn(state: GameState, choice: PlayerChoice, player: Player) {
   if (isBuy(choice)) {
+    if (state.get('extra').get('market_hours')) {
+      if (state.get('energy') % 3 !== 0) {
+        state = state.set('error', 'Situation: you may only buy during Market Hours');
+        return state;
+      }
+    }
     const supply_card = getSupplyCard(state, choice.cardname, 'supply').supplyCard;
     if (supply_card === null) {
       state = state.set('error', 'Card not in supply?');

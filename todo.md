@@ -21,6 +21,7 @@ idea: play a card and trash it
 trash a card from your discard pile
 
 having cards go in play, and be discarded when you reboot?
+  - then vps can cost 0 energy
 
 event that upgrades reboot (+1 card)?
 
@@ -31,3 +32,10 @@ gambit:
 
 duke:
   + vp equal to number of duchies in deck
+
+bad situations:
+  - if you have 6 cards in hand, you cannot draw more cards
+  - second hand: whenever you trash a card in hand, gain a silver
+
+good situations
+  - conservation: whenever you trash a card, +1 vp
