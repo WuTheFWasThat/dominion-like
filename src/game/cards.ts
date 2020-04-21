@@ -1,13 +1,17 @@
 import Immutable from 'immutable';
 
-import { make_card, Card, GameState, draw, discard, trash_from_deck, trash, trash_event, gain, scry, play } from  './core';
+import {
+  make_card, make_situation, Card, Situation,
+  GameState, Effect,
+  draw, discard, trash_from_deck, trash, trash_event, gain, scry, play
+} from  './core';
 import * as game from  './core';
 
 /* eslint-disable require-yield */
 
 export let KINGDOM_CARDS: {[name: string]: Card} = {};
 export let KINGDOM_EVENTS: {[name: string]: Card} = {};
-export let KINGDOM_SITUATIONS: {[name: string]: Card} = {};
+export let KINGDOM_SITUATIONS: {[name: string]: Situation} = {};
 
 
 function register_kingdom_card(card: Card) {
@@ -39,7 +43,7 @@ function register_kingdom_event(card: Card) {
 }
 
 
-function register_kingdom_situation(card: Card) {
+function register_kingdom_situation(card: Situation) {
   if (KINGDOM_CARDS[card.get('name')]) {
     throw new Error(`Already registered ${card.get('name')}`);
   }
@@ -115,7 +119,7 @@ export const Donkey: Card = make_card({
   energy: 1,
   description: '+1 card',
   fn: function* (state: GameState) {
-    return draw(state, 1);
+    return yield* draw(state, 1);
   }
 });
 
@@ -124,7 +128,7 @@ export const Mule: Card = make_card({
   energy: 1,
   description: '+2 card',
   fn: function* (state: GameState) {
-    return draw(state, 2);
+    return yield* draw(state, 2);
   }
 });
 
@@ -175,7 +179,7 @@ export const Smithy: Card = register_kingdom_card(make_card({
   energy: 1,
   description: '+3 cards',
   fn: function* (state: GameState) {
-    return draw(state, 3);
+    return yield* draw(state, 3);
   }
 }));
 
@@ -186,7 +190,7 @@ export const Peddler: Card = register_kingdom_card(make_card({
   cost_range: [0, 0],
   fn: function* (state: GameState) {
     state = state.set('money', state.get('money') + 1);
-    return draw(state, 1);
+    return yield* draw(state, 1);
   }
 }));
 
@@ -196,7 +200,7 @@ export const Lab: Card = register_kingdom_card(make_card({
   cost_range: [4, 8],
   description: '+2 cards',
   fn: function* (state: GameState) {
-    state = draw(state, 2);
+    state = yield* draw(state, 2);
     return state;
   }
 }));
@@ -207,7 +211,7 @@ export const Horse: Card = register_kingdom_card(make_card({
   cost_range: [1, 2],
   description: '+2 cards, trash this',
   fn: function* (state: GameState) {
-    state = draw(state, 2);
+    state = yield* draw(state, 2);
     return state;
   },
   cleanup: function*(state: GameState, card: Card) {
@@ -222,11 +226,11 @@ export const Hound: Card = register_kingdom_card(make_card({
   cost_range: [1, 2],
   description: '+1 card.  When discarded, +1 card',
   fn: function* (state: GameState) {
-    state = draw(state, 1);
+    state = yield* draw(state, 1);
     return state;
   },
   discard: function*(state: GameState, card: Card) {
-    state = draw(state, 1);
+    state = yield* draw(state, 1);
     state = state.set('discard', state.get('discard').push(card));
     return state;
   }
@@ -286,7 +290,7 @@ export const Steward: Card = register_kingdom_card(make_card({
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pick', message: 'Pick for steward:', options: ['+2 cards', '+$2', 'Trash 2 cards from your hand']}]) as game.PickChoice;
     if (choice.choice === 0) {
-      state = draw(state, 2);
+      state = yield* draw(state, 2);
       return state;
     } else if (choice.choice === 1) {
       state = state.set('money', state.get('money') + 2);
@@ -352,7 +356,7 @@ export const Mouse: Card = register_kingdom_card(make_card({
       throw Error('Something went wrong');
     }
     state = yield* trash_from_deck(state, choice.indices, 'hand');
-    state = draw(state, 1);
+    state = yield* draw(state, 1);
     return state;
   }
 }));
@@ -363,7 +367,7 @@ export const Library: Card = register_kingdom_card(make_card({
   description: 'Draw until you have seven cards',
   fn: function* (state: GameState) {
     while (state.get('hand').size < 7) {
-      state = draw(state, 1);
+      state = yield* draw(state, 1);
     }
     return state;
   }
@@ -497,7 +501,7 @@ export const Cellar: Card = register_kingdom_card(make_card({
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to discard for Cellar'}]) as game.PickHandChoice;
     state = yield* discard(state, choice.indices);
-    state = draw(state, choice.indices.length);
+    state = yield* draw(state, choice.indices.length);
     return state;
   }
 }));
@@ -569,7 +573,7 @@ export const Reboot: Card = make_card({
       indices.push(i);
     }
     state = yield* discard(state, indices);
-    state = draw(state, 5);
+    state = yield* draw(state, 5);
     return state;
   }
 });
@@ -585,7 +589,7 @@ export const Gamble: Card = register_kingdom_event(make_card({
       indices.push(i);
     }
     state = yield* discard(state, indices);
-    state = draw(state, n);
+    state = yield* draw(state, n);
     return state;
   }
 }));
@@ -595,7 +599,7 @@ export const Recruit: Card = register_kingdom_event(make_card({
   energy: 1,
   description: 'Draw two cards',
   fn: function* (state: GameState) {
-    return draw(state, 2);
+    return yield* draw(state, 2);
   }
 }));
 
@@ -719,11 +723,11 @@ export const Expedite: Card = register_kingdom_event(make_card({
 }));
 
 
-export const Triumph: Card = make_card({
+export const Triumph: Situation = make_situation({
   name: 'Triumph',
   energy: 0,
   description: 'Once you reach 100 points, the game ends',
-  fn: function* (state: GameState) {
+  setup: function* (state: GameState) {
     function* hook(state: GameState) {
       if (state.get('victory') >= 100) {
         state = state.set('ended', true);
@@ -735,11 +739,11 @@ export const Triumph: Card = make_card({
   }
 });
 
-export const Riches: Card = register_kingdom_situation(make_card({
+export const Riches: Situation = register_kingdom_situation(make_situation({
   name: 'Riches',
   energy: 0,
   description: 'If you have $200, the game ends',
-  fn: function* (state: GameState) {
+  setup: function* (state: GameState) {
     function* hook(state: GameState) {
       if (state.get('money') >= 200) {
         state = state.set('ended', true);
@@ -751,26 +755,57 @@ export const Riches: Card = register_kingdom_situation(make_card({
   }
 }));
 
-export const MarketHours: Card = register_kingdom_situation(make_card({
+export const MarketHours: Situation = register_kingdom_situation(make_situation({
   name: 'Market Hours',
   energy: 0,
   description: 'You may only buy cards when energy spent is a multiple of 3',
-  fn: function* (state: GameState) {
+  setup: function* (state: GameState) {
     state = state.set('extra', state.get('extra').set('market_hours', true))
     return state;
   }
 }));
 
-export const JunkYard: Card = register_kingdom_situation(make_card({
+export const JunkYard: Situation = register_kingdom_situation(make_situation({
   name: 'Junk Yard',
   energy: 0,
   description: 'Whenever you trash a card, gain a silver',
-  fn: function* (state: GameState) {
-    function* hook(state: GameState) {
+  setup: function* (state: GameState) {
+    function* hook(state: GameState, _card: Card) {
       state = state.set('discard', state.get('discard').push(Silver));
       return state;
     }
     state = state.set('trash_hooks', state.get('trash_hooks').push(hook))
+    return state;
+  }
+}));
+
+export const StrayHound: Situation = register_kingdom_situation(make_situation({
+  name: 'Stray Hound',
+  energy: 0,
+  description: (state: GameState) => {
+    let x = state.get('extra').get('stray_hound');
+    return `Every ten cards you draw, discard one card (${x}/10)`;
+  },
+  setup: function* (state: GameState) {
+    state = state.set('extra', state.get('extra').set('stray_hound', 0));
+    function* hook(state: GameState): Effect {
+      let x = (state.get('extra').get('stray_hound') + 1) % 10;
+      state = state.set('extra', state.get('extra').set('stray_hound', x));
+      if (x === 0 && state.get('hand').size > 0) {
+        while (true) {
+          let choice = (yield [state, {type: 'pickhand', message: 'Pick card to discard for Stray Hound', max: 1} as game.PickHandQuestion]) as game.PickHandChoice;
+          if (choice.indices.length === 0) {
+            continue;
+          } else if (choice.indices.length > 1) {
+            throw Error('Something went wrong');
+          }
+          state = yield* discard(state, choice.indices);
+          break;
+        }
+      }
+      return state;
+    }
+    state = state.set('draw_hooks', state.get('draw_hooks').push(hook))
     return state;
   }
 }));

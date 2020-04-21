@@ -15,6 +15,17 @@ export type Player = AsyncGenerator<PlayerChoice, PlayerChoice, [GameState, Play
 export type Effect = Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
 export type EffectFn = (state: GameState) => Effect;
 
+type RawSituation = {
+  name: string,
+  description: string | ((state: GameState) => string),
+  setup: EffectFn,
+  extra?: Immutable.Map<string, any>,
+  energy: number,
+};
+export type Situation = Immutable.Record<RawSituation>;
+export function make_situation(raw: RawSituation): Situation {
+  return Immutable.Record<RawSituation>(raw)();
+}
 type RawCard = {
   name: string,
   description: string | ((state: GameState) => string),
@@ -48,9 +59,10 @@ export type GameState = Immutable.Record<{
   trash: Immutable.List<Card>,
   supply: Immutable.List<SupplyCard>,
   events: Immutable.List<SupplyCard>,
-  situations: Immutable.List<Card>,
+  situations: Immutable.List<Situation>,
   turn_hooks: Immutable.List<EffectFn>,
-  trash_hooks: Immutable.List<EffectFn>,
+  trash_hooks: Immutable.List<(state: GameState, card: Card) => Effect>,
+  draw_hooks: Immutable.List<(state: GameState, card: Card) => Effect>,
   log: Immutable.List<string>,
   extra: Immutable.Map<string, any>,
   random: random.MersenneTwister19937,
@@ -113,6 +125,7 @@ export const InitialState = Immutable.Record({
   ]),
   turn_hooks: Immutable.List([]),
   trash_hooks: Immutable.List([]),
+  draw_hooks: Immutable.List([]),
   log: Immutable.List([]),
   extra: Immutable.Map<string, any>([]),
   random: null as any,
@@ -150,8 +163,8 @@ export function initial_state(seed: number | null): GameState {
     ));
   });
   const kingdom_situations = random.sample(mt, Object.keys(cards.KINGDOM_SITUATIONS), 1).map((k) => cards.KINGDOM_SITUATIONS[k]);
-  kingdom_situations.forEach((card) => {
-    state = state.set('situations', state.get('situations').push(card));
+  kingdom_situations.forEach((situation) => {
+    state = state.set('situations', state.get('situations').push(situation));
   });
 
   // useful for testing
@@ -200,11 +213,12 @@ export function scry(state: GameState): [GameState, Card | null] {
   return [state, drawn]
 }
 
-export function draw(state: GameState, ndraw?: number): GameState {
+export function* draw(state: GameState, ndraw?: number): Effect {
   if (ndraw === undefined) {
     ndraw = 1;
   }
   const drawn_cards = [];
+  let hooks = state.get('draw_hooks');
   for (let i = 0; i < ndraw; i++) {
     let card;
     [state, card] = scry(state);
@@ -212,6 +226,9 @@ export function draw(state: GameState, ndraw?: number): GameState {
       continue;
     }
     state = state.set('hand', state.get('hand').push(card));
+    for (let hook of hooks) {
+      state = yield* hook(state, card);
+    }
     drawn_cards.push(card);
   }
   if (drawn_cards.length) {
@@ -242,15 +259,19 @@ export function* discard(state: GameState, indices: Array<number>): Effect {
     let fn = card.get('discard') || _default_discard;
     state = yield* fn(state, card);
   }
+  if (cards.length) {
+    let names = (cards).map((card) => card.get('name')).join(', ');
+    state = state.set('log', state.get('log').push(`Discarded ${names}`));
+  }
   return state;
 }
 
 export function* trash(state: GameState, card: Card): Effect {
   let hooks = state.get('trash_hooks');
-  state = state.set('trash', state.get('trash').push(card));
   for (let hook of hooks) {
-    state = yield* hook(state);
+    state = yield* hook(state, card);
   }
+  state = state.set('trash', state.get('trash').push(card));
   return state;
 }
 
@@ -550,9 +571,8 @@ export async function run(state: GameState, player: Player): Promise<Array<GameS
   let history = [state];
 
   await player.next(null as any);  // TODO: hmm
-  for (let i = 0; i < state.get('situations').size; i++) {
-    let card = state.get('situations').get(i) as Card;
-    state = await applyEffect(state, card.get('fn'), player);
+  for (let situation of state.get('situations')) {
+    state = await applyEffect(state, situation.get('setup'), player);
   }
   while (!state.get('ended')) {
     let prevstate = state;

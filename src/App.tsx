@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
 import CardComponent from './components/Card';
+import SituationComponent from './components/Situation';
 // import { debounce } from 'lodash';
 import * as game from './game/core';
 
@@ -156,7 +157,7 @@ class App extends React.Component<AppProps, AppState> {
             <div>
               {this.props.state.get('situations').map((situation, i) => {
                 return (
-                  <CardComponent key={i} state={this.props.state} card={situation}/>
+                  <SituationComponent key={i} state={this.props.state} card={situation}/>
                 );
               })}
             </div>
