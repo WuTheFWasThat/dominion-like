@@ -164,7 +164,7 @@ export const FoolsYard: Card = register_kingdom_card(make_card({
   },
   cleanup: function*(state: GameState, card: Card) {
     let extra = card.get('extra');
-    if (extra === undefined) { throw new Error('Fools gold should have value field'); }
+    if (extra === undefined) { throw new Error('Fools yard should have value field'); }
     let val = extra.get('value') + 1;
     card = card.set('fn', function* (state: GameState) {
       return state.set('victory', state.get('victory') + val);
@@ -216,6 +216,31 @@ export const Smithy: Card = register_kingdom_card(make_card({
     return yield* draw(state, 3);
   }
 }));
+
+export const Blacksmith: Card = register_kingdom_card(make_card({
+  name: 'Blacksmith',
+  energy: 1,
+  cost_range: [3, 5],
+  description: '+0 cards, increase card draw of this card by 1',
+  extra: Immutable.Map({ value: 0 }), // used for coppersmith
+  fn: function* (state: GameState) {
+    return state;
+  },
+  cleanup: function*(state: GameState, card: Card) {
+    let extra = card.get('extra');
+    if (extra === undefined) { throw new Error('Blacksmith should have value field'); }
+    let val = extra.get('value') + 1;
+    card = card.set('fn', function* (state: GameState) {
+      return yield* draw(state, val);
+    });
+    card = card.set('description', '+' + val + ' cards, increase card draw of this card by 1');
+    card = card.set('name', 'Blacksmith +' + val);
+    card = card.set('extra', extra.set('value', val));
+    state = state.set('discard', state.get('discard').push(card));
+    return state;
+  }
+}));
+
 
 export const Peddler: Card = register_kingdom_card(make_card({
   name: 'Peddler',
@@ -594,6 +619,22 @@ export const Madness: Card = register_kingdom_card(make_card({
   },
 }));
 
+export const Madman: Card = register_kingdom_card(make_card({
+  name: 'Madman',
+  energy: 0,
+  cost_range: [5, 10],
+  description: '+1 card per card in your hand. Trash this card',
+  fn: function* (state: GameState) {
+    let n = state.get('hand').size;
+    state = yield* draw(state, n);
+    return state;
+  },
+  cleanup: function*(state: GameState, card: Card) {
+    state = yield* trash(state, card);
+    return state;
+  },
+}));
+
 
 export const Reboot: Card = make_card({
   name: 'Reboot',
@@ -814,6 +855,21 @@ export const JunkYard: Situation = register_kingdom_situation(make_situation({
   }
 }));
 
+export const Compost: Situation = register_kingdom_situation(make_situation({
+  name: 'Compost',
+  energy: 0,
+  description: 'Whenever you trash a card, +1 VP',
+  setup: function* (state: GameState) {
+    function* hook(state: GameState, _card: Card) {
+      state = state.set('victory', state.get('victory') + 1);
+      return state;
+    }
+    state = state.set('trash_hooks', state.get('trash_hooks').push(hook))
+    return state;
+  }
+}));
+
+
 export const StrayHound: Situation = register_kingdom_situation(make_situation({
   name: 'Stray Hound',
   energy: 0,
@@ -844,3 +900,7 @@ export const StrayHound: Situation = register_kingdom_situation(make_situation({
     return state;
   }
 }));
+
+console.log(KINGDOM_CARDS);
+console.log(KINGDOM_EVENTS);
+console.log(KINGDOM_SITUATIONS);

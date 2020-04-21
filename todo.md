@@ -30,14 +30,9 @@ gambit:
   0 energy
   draw 2 cards.  if either is an estate, gain 3 vp.  otherwise, gain 1 energy
 
-duke:
-  + vp equal to number of duchies in deck
-
 bad situations:
   - if you have 6 cards in hand, you cannot draw more cards
-  - for every 10 cards you draw, gain a copper
-
-good situations
-  - conservation: whenever you trash a card, +1 vp
+  - if you draw up to 10 cards in hand, gain a copper
+  - windfall: if your deck and discard are empty, gain 4 golds.  trash this
 
 - a card that when discarded gets trashed?  (even to reboot so you have to always play it)
