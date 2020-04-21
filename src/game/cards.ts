@@ -1,5 +1,6 @@
 import Immutable from 'immutable';
-import { make_card, Card, GameState, draw, discard, trash, trash_event, gain, scry } from  './core';
+
+import { make_card, Card, GameState, draw, discard, trash_from_deck, trash, trash_event, gain, scry, play } from  './core';
 import * as game from  './core';
 
 /* eslint-disable require-yield */
@@ -99,7 +100,6 @@ export const Duchy: Card = make_card({
     return state.set('victory', state.get('victory') + 2);
   }
 });
-
 
 export const Province: Card = make_card({
   name: 'Province',
@@ -210,8 +210,8 @@ export const Horse: Card = register_kingdom_card(make_card({
     state = draw(state, 2);
     return state;
   },
-  cleanup: function(state: GameState, card: Card) {
-    state = state.set('trash', state.get('trash').push(card));
+  cleanup: function*(state: GameState, card: Card) {
+    state = yield* trash(state, card);
     return state;
   }
 }));
@@ -225,7 +225,7 @@ export const Hound: Card = register_kingdom_card(make_card({
     state = draw(state, 1);
     return state;
   },
-  discard: function(state: GameState, card: Card) {
+  discard: function*(state: GameState, card: Card) {
     state = draw(state, 1);
     state = state.set('discard', state.get('discard').push(card));
     return state;
@@ -239,7 +239,7 @@ export const Chapel: Card = register_kingdom_card(make_card({
   description: 'Trash any number of cards from your hand',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to trash for Chapel'}]) as game.PickHandChoice;
-    state = yield* trash(choice.indices, 'hand')(state);
+    state = yield* trash_from_deck(state, choice.indices, 'hand');
     return state;
   }
 }));
@@ -257,7 +257,7 @@ export const Lurker: Card = register_kingdom_card(make_card({
         state = state.set('error', `Unexpected Lurker supply choice ${supplychoice.cardname}`);
         return state;
       }
-      state = state.set('trash', state.get('trash').push(supplyCard.get('card')));
+      state = yield* trash(state, supplyCard.get('card'));
       state = state.set('log', state.get('log').push(`Trashed a ${supplyCard.get('card').get('name')} from supply`));
       return state;
     } else if (choice.choice === 1) {
@@ -297,7 +297,7 @@ export const Steward: Card = register_kingdom_card(make_card({
         state = state.set('error', 'Cannot trash more than 2 cards with Steward');
         return state;
       }
-      state = yield* trash(trashchoice.indices, 'hand')(state);
+      state = yield* trash_from_deck(state, trashchoice.indices, 'hand');
       return state;
     } else {
       state = state.set('error', `Unexpected Steward choice ${choice.choice}`);
@@ -321,7 +321,7 @@ export const Sacrifice: Card = register_kingdom_card(make_card({
     }
     let index = choice.indices[0];
     let card = choice.indices.
-    state = trash(state, choice.indices, 'hand');
+    state = yield* trash_from_deck(state, choice.indices, 'hand');
     return state;
   }
 }));
@@ -351,7 +351,7 @@ export const Mouse: Card = register_kingdom_card(make_card({
     } else if (choice.indices.length > 1) {
       throw Error('Something went wrong');
     }
-    state = yield* trash(choice.indices, 'hand')(state);
+    state = yield* trash_from_deck(state, choice.indices, 'hand');
     state = draw(state, 1);
     return state;
   }
@@ -378,7 +378,7 @@ export const FoolsGold: Card = register_kingdom_card(make_card({
   fn: function* (state: GameState) {
     return state;
   },
-  cleanup: function(state: GameState, card: Card) {
+  cleanup: function*(state: GameState, card: Card) {
     let extra = card.get('extra');
     if (extra === undefined) { throw new Error('Fools gold should have value field'); }
     let val = extra.get('value') + 1;
@@ -462,8 +462,8 @@ export const ThroneRoom: Card = register_kingdom_card(make_card({
     state = state.set('log', state.get('log').push(`Played throne room on ${card.get('name')}`));
     // TODO: use helper function for this
     state = state.set('hand', state.get('hand').remove(index));
-    state = yield* card.get('fn')(state);
-    state = yield* card.get('fn')(state);
+    state = yield* play(state, card);
+    state = yield* play(state, card);
     state = state.set('discard', state.get('discard').push(card));
     return state;
   }
@@ -482,7 +482,7 @@ export const Vassal: Card = register_kingdom_card(make_card({
     }
     state = state.set('log', state.get('log').push(`Vassal plays a ${card.get('name')}`));
     // TODO: use helper function for this
-    state = yield* card.get('fn')(state);
+    state = yield* play(state, card);
     state = state.set('discard', state.get('discard').push(card));
     return state;
   }
@@ -496,7 +496,7 @@ export const Cellar: Card = register_kingdom_card(make_card({
   description: 'Discard any number of cards from your hand, draw that many',
   fn: function* (state: GameState) {
     let choice = (yield [state, {type: 'pickhand', message: 'Pick cards to discard for Cellar'}]) as game.PickHandChoice;
-    state = discard(state, choice.indices);
+    state = yield* discard(state, choice.indices);
     state = draw(state, choice.indices.length);
     return state;
   }
@@ -519,8 +519,7 @@ export const AllForOne: Card = register_kingdom_card(make_card({
       }
     }
     indices = indices.sort((a,b) => b-a);
-    for (let i = 0; i < indices.length; i++) {
-      let index = indices[i];
+    for (let index of indices) {
       let card = state.get('draw').get(index);
       if (card === undefined) {
         throw Error(`Unexpected card out of bounds ${index} indices ${indices}`);
@@ -551,8 +550,8 @@ export const Madness: Card = register_kingdom_card(make_card({
     state = state.set('hand', state.get('hand').set(index, card));
     return state;
   },
-  cleanup: function(state: GameState, card: Card) {
-    state = state.set('trash', state.get('trash').push(card));
+  cleanup: function*(state: GameState, card: Card) {
+    state = yield* trash(state, card);
     return state;
   },
 }));
@@ -569,7 +568,7 @@ export const Reboot: Card = make_card({
     for (let i = 0; i < n; i++) {
       indices.push(i);
     }
-    state = discard(state, indices);
+    state = yield* discard(state, indices);
     state = draw(state, 5);
     return state;
   }
@@ -585,10 +584,8 @@ export const Gamble: Card = register_kingdom_event(make_card({
     for (let i = 0; i < n; i++) {
       indices.push(i);
     }
-    state = discard(state, indices);
-    for (let i = 0; i < n; i++) {
-      state = draw(state);
-    }
+    state = yield* discard(state, indices);
+    state = draw(state, n);
     return state;
   }
 }));

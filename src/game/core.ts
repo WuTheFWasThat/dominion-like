@@ -12,17 +12,18 @@ export type PlayerChoice = {
 };
 export type Player = AsyncGenerator<PlayerChoice, PlayerChoice, [GameState, PlayerQuestion | null]>;
 
-export type Effect = (state: GameState) => Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
+export type Effect = Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
+export type EffectFn = (state: GameState) => Effect;
 
 type RawCard = {
   name: string,
   description: string | ((state: GameState) => string),
   cost_range?: [number, number],
   setup?: (state: GameState) => GameState,
-  fn: Effect,
+  fn: EffectFn,
   extra?: Immutable.Map<string, any>,
-  cleanup?: (state: GameState, card: Card) => GameState,
-  discard?: (state: GameState, card: Card) => GameState,
+  cleanup?: (state: GameState, card: Card) => Effect,
+  discard?: (state: GameState, card: Card) => Effect,
   energy: number,
 };
 export type Card = Immutable.Record<RawCard>;
@@ -48,8 +49,8 @@ export type GameState = Immutable.Record<{
   supply: Immutable.List<SupplyCard>,
   events: Immutable.List<SupplyCard>,
   situations: Immutable.List<Card>,
-  turn_hooks: Immutable.List<Effect>,
-  trash_hooks: Immutable.List<Effect>,
+  turn_hooks: Immutable.List<EffectFn>,
+  trash_hooks: Immutable.List<EffectFn>,
   log: Immutable.List<string>,
   extra: Immutable.Map<string, any>,
   random: random.MersenneTwister19937,
@@ -220,11 +221,16 @@ export function draw(state: GameState, ndraw?: number): GameState {
   return state;
 }
 
-export function discard(state: GameState, indices: Array<number>): GameState {
+/* eslint-disable require-yield */
+function* _default_discard(state: GameState, card: Card) {
+  return state.set('discard', state.get('discard').push(card));
+}
+/* eslint-enable require-yield */
+
+export function* discard(state: GameState, indices: Array<number>): Effect {
   indices = indices.slice().sort((a,b) => b-a);
   let cards: Array<Card> = [];
-  for (let i = 0; i < indices.length; i++) {
-    let index = indices[i];
+  for (let index of indices) {
     const card = state.get('hand').get(index);
     if (card === undefined) {
       throw Error(`Unable to discard? ${state.get('hand').size} ${index}`)
@@ -232,39 +238,37 @@ export function discard(state: GameState, indices: Array<number>): GameState {
     state = state.set('hand', state.get('hand').delete(index));
     cards.push(card);
   }
-  cards.forEach((card) => {
-    let fn = card.get('discard') || ((state, card) => state.set('discard', state.get('discard').push(card)));
-    state = fn(state, card);
-  })
+  for (let card of cards) {
+    let fn = card.get('discard') || _default_discard;
+    state = yield* fn(state, card);
+  }
   return state;
 }
 
-export function trash(indices: Array<number>, type: DeckType): Effect {
-  return function*(state: GameState) {
-    indices = indices.slice().sort((a,b) => b-a);
-    let trashed_cards = [];
-    let hooks = state.get('trash_hooks');
-    for (let i = 0; i < indices.length; i++) {
-      let index = indices[i];
-      let card = state.get(type).get(index);
-      if (card === undefined) {
-        throw Error(`${type} card out of bounds ${index}`);
-      }
-      state = state.set(type, state.get(type).remove(index));
-      trashed_cards.push(card);
-      state = state.set('trash', state.get('trash').push(card));
-      for (let j = 0; j < hooks.size; j++) {
-        let hook = hooks.get(j);
-        if (hook === undefined) {
-          throw Error(`Unexpected undefined hook ${j}`);
-        }
-        state = yield* hook(state);
-      }
-    }
-    let names = (trashed_cards).map((card) => card.get('name')).join(', ');
-    state = state.set('log', state.get('log').push(`Trashed ${names}`));
-    return state;
+export function* trash(state: GameState, card: Card): Effect {
+  let hooks = state.get('trash_hooks');
+  state = state.set('trash', state.get('trash').push(card));
+  for (let hook of hooks) {
+    state = yield* hook(state);
   }
+  return state;
+}
+
+export function* trash_from_deck(state: GameState, indices: Array<number>, type: DeckType): Effect {
+  indices = indices.slice().sort((a,b) => b-a);
+  let trashed_cards = [];
+  for (let index of indices) {
+    let card = state.get(type).get(index);
+    if (card === undefined) {
+      throw Error(`${type} card out of bounds ${index}`);
+    }
+    state = state.set(type, state.get(type).remove(index));
+    trashed_cards.push(card);
+    state = yield* trash(state, card);
+  }
+  let names = (trashed_cards).map((card) => card.get('name')).join(', ');
+  state = state.set('log', state.get('log').push(`Trashed ${names}`));
+  return state;
 }
 
 export function gain(state: GameState, cardName: string): GameState {
@@ -277,18 +281,29 @@ export function gain(state: GameState, cardName: string): GameState {
   return state;
 }
 
-export function play(index: number): Effect {
-  return function*(state: GameState) {
-    let card = state.get('hand').get(index);
-    state = state.set('hand', state.get('hand').remove(index));
-    if (card === undefined) {
-      throw Error(`Tried to play ${index} which does not exist`);
-    }
-    state = yield* card.get('fn')(state);
-    let cleanup = card.get('cleanup') || ((state, card) => state.set('discard', state.get('discard').push(card)));
-    state = cleanup(state, card);
-    return state;
+/* eslint-disable require-yield */
+function* _default_cleanup(state: GameState, card: Card) {
+  return state.set('discard', state.get('discard').push(card));
+}
+/* eslint-enable require-yield */
+
+export function* play_from_hand(state: GameState, index: number): Effect {
+  let card = state.get('hand').get(index);
+  state = state.set('hand', state.get('hand').remove(index));
+  if (card === undefined) {
+    throw Error(`Tried to play ${index} which does not exist`);
   }
+  state = yield* card.get('fn')(state);
+  let cleanup = card.get('cleanup') || _default_cleanup;
+  state = yield* cleanup(state, card);
+  return state;
+}
+
+export function* play(state: GameState, card: Card): Effect {
+  state = yield* card.get('fn')(state);
+  let cleanup = card.get('cleanup') || _default_cleanup;
+  state = yield* cleanup(state, card);
+  return state;
 }
 
 export interface NoChoice extends PlayerChoice {
@@ -385,7 +400,7 @@ export interface PickChoice extends PlayerChoice {
 };
 
 
-export async function applyEffect(state: GameState, effect: Effect, player: Player): Promise<GameState> {
+export async function applyEffect(state: GameState, effect: EffectFn, player: Player): Promise<GameState> {
   let init_state = state;
   let gen = effect(state)
   let result = await gen.next(null as any);  // hmm
@@ -523,7 +538,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     */
     state = state.set('error', null);
     state = state.set('log', state.get('log').push(`Played a ${card.get('name')}`));
-    state = await applyEffect(state, play(play_choice.index), player);
+    state = await applyEffect(state, (state) => play_from_hand(state, play_choice.index), player);
     state = state.set('energy', state.get('energy') + card.get('energy'));
   } else {
     state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));

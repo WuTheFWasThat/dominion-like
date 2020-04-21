@@ -35,7 +35,9 @@ duke:
 
 bad situations:
   - if you have 6 cards in hand, you cannot draw more cards
-  - second hand: whenever you trash a card in hand, gain a silver
+  - for every 10 cards you draw, gain a copper
 
 good situations
   - conservation: whenever you trash a card, +1 vp
+
+- a card that when discarded gets trashed?  (even to reboot so you have to always play it)
