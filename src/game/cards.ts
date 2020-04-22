@@ -218,7 +218,7 @@ export const SilkRoad: Card = register_kingdom_card(make_card({
   energy: 2,
   description: '+1 victory point for every Silk Road in your deck',
   fn: function* (state: GameState) {
-    let n = game.count_in_deck(state, (card) => card.get('name') === 'Silk Road');
+    let n = game.count_in_deck(state, (card) => card.get('name') === SilkRoad.get('name'));
     return state.set('victory', state.get('victory') + n);
   }
 }));
@@ -230,7 +230,7 @@ export const Park: Card = register_kingdom_card(make_card({
   cost_range: [8, 16],
   description: '+1 victory point for every card in your hand',
   fn: function* (state: GameState) {
-    let n = game.count_in_deck(state, (card) => card.get('name') === 'Silk Road');
+    let n = game.count_in_deck(state, (card) => card.get('name') === Park.get('name'));
     return state.set('victory', state.get('victory') + n);
   }
 }));
@@ -258,7 +258,7 @@ export const Duke: Card = register_kingdom_card(make_card({
   energy: 1,
   description: '+N victory points, where N is the number of duchies in your deck',
   fn: function* (state: GameState) {
-    let n = game.count_in_deck(state, (card) => card.get('name') === 'Duchy');
+    let n = game.count_in_deck(state, (card) => card.get('name') === Duchy.get('name'));
     return state.set('victory', state.get('victory') + n);
   }
 }));
@@ -616,7 +616,7 @@ export const Coppersmith: Card = register_kingdom_card(make_card({
   fn: function* (state: GameState) {
     for (let i = 0; i < state.get('hand').size; i++) {
       let card = state.get('hand').get(i) as Card;
-      if (card.get('name').split('+')[0] !== 'Copper') {
+      if (card.get('name').split('+')[0] !== Copper.get('name')) {
         continue;
       }
       let extra = card.get('extra');
@@ -764,6 +764,22 @@ export const Madman: Card = register_kingdom_card(make_card({
   },
 }));
 
+
+export const Gambit: Card = register_kingdom_card(make_card({
+  name: 'Gambit',
+  energy: 0,
+  description: 'Draw 2 cards. If either is an estate, gain 3 vp. Otherwise, gain 1 energy',
+  fn: function* (state: GameState) {
+    let drawn_state = yield* draw(state, 2);
+    state = drawn_state.state;
+    if (drawn_state.cards.some((card: Card) => card.get('name') === Estate.get('name'))) {
+      state = state.set('victory', state.get('victory') + 3);
+    } else {
+      state = state.set('energy', state.get('energy') + 1);
+    }
+    return state;
+  },
+}));
 
 export const Reboot: Card = make_card({
   name: 'Reboot',
