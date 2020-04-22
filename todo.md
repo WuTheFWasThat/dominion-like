@@ -25,11 +25,9 @@ CARDS
 
 - a card that when discarded gets trashed?  (even to reboot so you have to always play it)
 
-- clones a card in hand?
 - borrow: get $1 money now, -1 card or something
 
 - more cards that give money
-  - simple moneylender card
   - gives you money based on VP you have
 
 positive situations that you have to buy (expensive in terms of energy)

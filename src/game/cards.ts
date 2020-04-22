@@ -371,7 +371,7 @@ export const Peddler: Card = register_kingdom_card({
 export const Lab: Card = register_kingdom_card({
   name: 'Lab',
   energy: 0,
-  cost_range: [4, 8],
+  cost_range: [5, 10],
   description: '+2 cards',
   fn: function* (state: GameState) {
     state = (yield* draw(state, 2)).state;
@@ -382,7 +382,7 @@ export const Lab: Card = register_kingdom_card({
 export const Horse: Card = register_kingdom_card({
   name: 'Horse',
   energy: 0,
-  cost_range: [1, 2],
+  cost_range: [2, 4],
   description: '+2 cards, trash this',
   fn: function* (state: GameState) {
     state = (yield* draw(state, 2)).state;
@@ -545,7 +545,7 @@ export const Mouse: Card = register_kingdom_card({
   energy: 0,
   description: 'Trash a card from your hand. If you do, +1 card',
   fn: function* (state: GameState) {
-    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to trash for Mouse', limit: 1}]) as game.PickHandChoice;
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to trash for ' + Mouse.get('name'), limit: 1}]) as game.PickHandChoice;
     if (choice.indices.length === 0) {
       return state;
     } else if (choice.indices.length > 1) {
@@ -556,6 +556,24 @@ export const Mouse: Card = register_kingdom_card({
     return state;
   }
 });
+
+export const Moneylender: Card = register_kingdom_card({
+  name: 'Moneylender',
+  energy: 0,
+  description: 'Trash a card from your hand. If you do, +$3',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickhand', message: 'Pick card to trash for ' + Moneylender.get('name'), limit: 1}]) as game.PickHandChoice;
+    if (choice.indices.length === 0) {
+      return state;
+    } else if (choice.indices.length > 1) {
+      throw Error('Something went wrong');
+    }
+    state = yield* trash_from_deck(state, choice.indices, 'hand');
+    state = state.set('money', state.get('money') + 3);
+    return state;
+  }
+});
+
 
 export const Library: Card = register_kingdom_card({
   name: 'Library',
