@@ -12,7 +12,7 @@ export type PlayerChoice = {
 };
 export type Player = AsyncGenerator<PlayerChoice, PlayerChoice, [GameState, PlayerQuestion | null]>;
 
-export type Effect = Generator<[GameState, PlayerQuestion | null], GameState, PlayerChoice>;
+export type Effect<T=GameState> = Generator<[GameState, PlayerQuestion | null], T, PlayerChoice>;
 export type EffectFn = (state: GameState) => Effect;
 
 type RawSituation = {
@@ -249,7 +249,7 @@ export function scry(state: GameState): [GameState, Card | null] {
   return [state, drawn]
 }
 
-export function* draw(state: GameState, ndraw?: number): Effect {
+export function* draw(state: GameState, ndraw?: number): Effect<{state: GameState, cards: Array<Card>}> {
   if (ndraw === undefined) {
     ndraw = 1;
   }
@@ -271,7 +271,7 @@ export function* draw(state: GameState, ndraw?: number): Effect {
     let names = (drawn_cards).map((card) => card.get('name')).join(', ');
     state = state.set('log', state.get('log').push(`Drew ${names}`));
   }
-  return state;
+  return { state, cards: drawn_cards };
 }
 
 /* eslint-disable require-yield */
