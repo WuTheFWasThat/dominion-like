@@ -1088,6 +1088,7 @@ export const Trader: Situation = register_kingdom_situation({
   }
 });
 
+/*
 export const StrayHound: Situation = register_kingdom_situation({
   name: 'Stray Hound',
   description: (state: GameState) => {
@@ -1117,6 +1118,7 @@ export const StrayHound: Situation = register_kingdom_situation({
     return state;
   }
 });
+*/
 
 export const Compost: Situation = register_kingdom_situation_to_buy({
   name: 'Compost',
