@@ -280,7 +280,7 @@ export const FoolsYard: Card = register_kingdom_card(make_card({
       return state.set('victory', state.get('victory') + val);
     });
     card = card.set('description', '+' + val + ' VP, increase VP this card gives by 1');
-    card = card.set('name', 'Fool\'s Yard +' + val);
+    card = card.set('name', FoolsYard.get('name') + ' +' + val);
     card = card.set('extra', extra.set('value', val));
     state = state.set('discard', state.get('discard').push(card));
     return state;
@@ -332,7 +332,7 @@ export const Blacksmith: Card = register_kingdom_card(make_card({
   energy: 1,
   cost_range: [3, 5],
   description: '+0 cards, increase card draw of this card by 1',
-  extra: Immutable.Map({ value: 0 }), // used for coppersmith
+  extra: Immutable.Map({ value: 0 }),
   fn: function* (state: GameState) {
     return state;
   },
@@ -344,7 +344,7 @@ export const Blacksmith: Card = register_kingdom_card(make_card({
       return (yield* draw(state, val)).state;
     });
     card = card.set('description', '+' + val + ' cards, increase card draw of this card by 1');
-    card = card.set('name', 'Blacksmith +' + val);
+    card = card.set('name', Blacksmith.get('name') + ' +' + val);
     card = card.set('extra', extra.set('value', val));
     state = state.set('discard', state.get('discard').push(card));
     return state;
@@ -494,6 +494,7 @@ export const Sacrifice: Card = register_kingdom_card(make_card({
     let index = choice.indices[0];
     let card = state.get('hand').get(index) as Card;
     state = state.set('hand', state.get('hand').remove(index));
+    // TODO: fix, avoid the discard
     state = yield* play(state, card);
     state = yield* trash(state, card);
     return state;
@@ -578,7 +579,7 @@ export const FoolsGold: Card = register_kingdom_card(make_card({
       return state.set('money', state.get('money') + val);
     });
     card = card.set('description', '+$' + val + ', increase $ this card gives by 1');
-    card = card.set('name', 'Fool\'s Gold +' + val);
+    card = card.set('name', FoolsGold.get('name') + ' +' + val);
     card = card.set('extra', extra.set('value', val));
     state = state.set('discard', state.get('discard').push(card));
     return state;
@@ -628,7 +629,7 @@ export const Coppersmith: Card = register_kingdom_card(make_card({
         return state.set('money', state.get('money') + val);
       });
       card = card.set('description', '+$' + val);
-      card = card.set('name', 'Copper +' + (val-1));
+      card = card.set('name', Copper.get('name') + ' +' + (val-1));
       card = card.set('extra', extra.set('value', val));
       state = state.set('hand', state.get('hand').set(i, card));
     }
@@ -673,9 +674,7 @@ export const Vassal: Card = register_kingdom_card(make_card({
       return state;
     }
     state = state.set('log', state.get('log').push(`Vassal plays a ${card.get('name')}`));
-    // TODO: use helper function for this
     state = yield* play(state, card);
-    state = state.set('discard', state.get('discard').push(card));
     return state;
   }
 }));
