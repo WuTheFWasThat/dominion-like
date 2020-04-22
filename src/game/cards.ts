@@ -494,8 +494,10 @@ export const Sacrifice: Card = register_kingdom_card(make_card({
     let index = choice.indices[0];
     let card = state.get('hand').get(index) as Card;
     state = state.set('hand', state.get('hand').remove(index));
-    // TODO: fix, avoid the discard
-    state = yield* play(state, card);
+    // TODO: do this more elegantly to allow cleanup hooks?
+    // e.g. fool's gold should still increase by 1 in case it gets trashed
+    // state = yield* play(state, card);
+    state = yield* card.get('fn')(state);
     state = yield* trash(state, card);
     return state;
   }
