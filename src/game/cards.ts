@@ -611,6 +611,30 @@ export const FoolsGold: Card = register_kingdom_card({
   }
 });
 
+export const Seek: Card = register_kingdom_card({
+  name: 'Seek',
+  energy: 0,
+  cost_range: [2, 6],
+  description: 'Choose a card from your draw pile, put it in hand',
+  fn: function* (state: GameState) {
+    let choice = (yield [state, {type: 'pickdraw', max: 1, message: 'Pick card for Seek'}]) as game.PickDrawChoice;
+    if (choice.indices.length === 0) {
+      return state;
+    } else if (choice.indices.length > 1) {
+      throw Error('Something went wrong');
+    }
+    let index = choice.indices[0] as number;
+    let card = state.get('draw').get(index);
+    if (card === undefined) {
+      return state;
+    }
+    state = state.set('draw', state.get('draw').remove(index));
+    state = state.set('hand', state.get('hand').push(card));
+    return state;
+  },
+});
+
+
 /*
 export const FoolsGold: Card = register_kingdom_card({
   name: 'Fool\'s Gold',

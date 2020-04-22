@@ -476,6 +476,21 @@ export interface PickTrashChoice extends PlayerChoice {
   index: number,
 };
 
+export interface PickDrawQuestion extends PlayerQuestion {
+  type: 'pickdraw',
+  message: string,
+  min?: number,
+  max?: number,
+};
+export function isPickDrawQuestion(q: PlayerQuestion): q is PickDrawQuestion {
+    return q.type === 'pickdraw';
+}
+export interface PickDrawChoice extends PlayerChoice {
+  type: 'pickdraw',
+  indices: Array<number>,
+};
+
+
 export interface PickQuestion extends PlayerQuestion {
   type: 'pick',
   message: string,

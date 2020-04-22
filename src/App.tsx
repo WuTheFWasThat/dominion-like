@@ -13,6 +13,7 @@ type AppProps = {
   choice_cb: (choice: game.PlayerChoice) => void;
 };
 type AppState = {
+  drawIndices: Array<number>,
   handIndices: Array<number>,
   error: string | null,
 };
@@ -26,6 +27,7 @@ class App extends React.Component<AppProps, AppState> {
 
   static initialState() {
     return {
+      drawIndices: [],
       handIndices: [],
       error: null,
     };
@@ -54,6 +56,8 @@ class App extends React.Component<AppProps, AppState> {
       if (game.isActionQuestion(this.props.question)) {
         instruction_text = 'Play or buy a card!';
       } else if (game.isPickHandQuestion(this.props.question)) {
+        instruction_text = this.props.question.message;
+      } else if (game.isPickDrawQuestion(this.props.question)) {
         instruction_text = this.props.question.message;
       } else if (game.isPickSupplyQuestion(this.props.question)) {
         instruction_text = this.props.question.message;
@@ -114,6 +118,32 @@ class App extends React.Component<AppProps, AppState> {
                 } as game.PickHandChoice);
                 this.setState({
                   handIndices: [],
+                });
+              };
+              return (
+                <div onClick={onClick}>
+                    Done choosing
+                </div>
+              );
+            } else if (game.isPickDrawQuestion(this.props.question)) {
+              let n = this.state.drawIndices.length;
+              if (this.props.question.min !== undefined) {
+                if (n < this.props.question.min) {
+                  return null;
+                }
+              }
+              if (this.props.question.max !== undefined) {
+                if (n > this.props.question.max) {
+                  return null;
+                }
+              }
+              let onClick = () => {
+                this.props.choice_cb({
+                  type: 'pickdraw',
+                  indices: this.state.drawIndices,
+                } as game.PickDrawChoice);
+                this.setState({
+                  drawIndices: [],
                 });
               };
               return (
@@ -274,8 +304,29 @@ class App extends React.Component<AppProps, AppState> {
             </h3>
             <div>
               {this.props.state.get('draw').map((card, i) => {
+                let onClick;
+                let classNames = [];
+                if (this.props.question) {
+                  if (game.isPickDrawQuestion(this.props.question)) {
+                    let selected = this.state.drawIndices.findIndex((el) => el === i) !== -1;
+                    if (selected) {
+                      classNames.push('selected');
+                    }
+                    onClick = () => {
+                      if (selected) {
+                        this.setState({
+                          drawIndices: this.state.drawIndices.filter((el) => el !== i),
+                        });
+                      } else {
+                        this.setState({
+                          drawIndices: this.state.drawIndices.concat([i]),
+                        });
+                      }
+                    }
+                  }
+                }
                 return (
-                  <CardComponent key={i} state={this.props.state} card={card}/>
+                  <CardComponent classNames={classNames} state={this.props.state} card={card} key={i} onClick={onClick}/>
                 );
               })}
             </div>
