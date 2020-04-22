@@ -34,7 +34,6 @@ CARDS
 
 positive situations that you have to buy (expensive in terms of energy)
   - every 5 energy spent, draw 5 cards
-  - reboot gives +2 cards
   - every 10th card played costs 0 energy
   - after reboot, cards cost 1 less energy until you draw a card
   - reboot reduces $ by 2, doesn't remove it

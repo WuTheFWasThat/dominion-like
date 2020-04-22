@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import CardComponent from './components/Card';
 import SituationComponent from './components/Situation';
+import EventComponent from './components/Event';
 // import { debounce } from 'lodash';
 import * as game from './game/core';
 
@@ -199,13 +200,17 @@ class App extends React.Component<AppProps, AppState> {
                   onClick = () => {
                     this.props.choice_cb({
                       type: 'event',
-                      cardname: event_card.get('card').get('name'),
+                      cardname: event_card.get('event').get('name'),
                     } as game.EventChoice);
                   }
                 }
                 return (
                   <span key={i}>
-                    ${event_card.get('cost')} <CardComponent key={i} state={this.props.state} card={event_card.get('card')} onClick={onClick}/>
+                      ${event_card.get('cost')}
+                      &nbsp;
+                      <i className="fa fa-bolt"></i>{event_card.get('energy')}
+                      &nbsp;
+                    <EventComponent key={i} state={this.props.state} event={event_card.get('event')} onClick={onClick}/>
                   </span>
                 );
               })}
