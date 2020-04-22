@@ -332,6 +332,19 @@ export const Smithy: Card = register_kingdom_card({
   }
 });
 
+export const Storyteller: Card = register_kingdom_card({
+  name: 'Storyteller',
+  energy: 1,
+  cost_range: [5, 10],
+  description: 'Pay all your $, draw one card per $.',
+  fn: function* (state: GameState) {
+    let n = state.get('money');
+    state = state.set('money', 0);
+    return (yield* draw(state, n)).state;
+  }
+});
+
+
 export const Blacksmith: Card = register_kingdom_card({
   name: 'Blacksmith',
   energy: 1,
@@ -1107,6 +1120,7 @@ export const StrayHound: Situation = register_kingdom_situation({
 
 export const Compost: Situation = register_kingdom_situation_to_buy({
   name: 'Compost',
+  energy_range: [2, 7],
   description: 'Whenever you trash a card, +1 VP',
   fn: function* (state: GameState) {
     function* hook(state: GameState, _card: Card) {
@@ -1120,6 +1134,7 @@ export const Compost: Situation = register_kingdom_situation_to_buy({
 
 export const JunkYard: Situation = register_kingdom_situation_to_buy({
   name: 'JunkYard',
+  energy_range: [2, 5],
   description: 'Whenever you trash a card, +$1',
   fn: function* (state: GameState) {
     function* hook(state: GameState, _card: Card) {
