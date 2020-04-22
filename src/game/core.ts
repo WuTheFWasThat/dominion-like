@@ -605,23 +605,18 @@ function setSupplyCardCost(state: GameState, cardName: string, cost: number): Ga
 }
 */
 
-export function count_in_deck(state: GameState, fn: (card: Card) => boolean): number {
+export function count_in_deck(state: GameState, fn: (card: Card) => boolean, types?: Array<DeckType>): number {
+  if (types === undefined) {
+    types = ['draw', 'discard', 'hand'];
+  }
   let count = 0;
-  state.get('draw').forEach((card) => {
-    if (fn(card)) {
-      count = count + 1;
-    }
-  })
-  state.get('discard').forEach((card) => {
-    if (fn(card)) {
-      count = count + 1;
-    }
-  })
-  state.get('hand').forEach((card) => {
-    if (fn(card)) {
-      count = count + 1;
-    }
-  })
+  for (let type of types) {
+    state.get(type).forEach((card) => {
+      if (fn(card)) {
+        count = count + 1;
+      }
+    })
+  }
   return count;
 }
 

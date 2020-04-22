@@ -41,5 +41,10 @@ positive situations that you have to buy (expensive in terms of energy)
 - bug in vassal and sacrific (discards card)
 
 make an in-play area...
+OR
+paul's idea: draw doesn't reshuffle, only reboot can
 
 - gain money equal to energy?
+- time eater: every 12 cards played, gain an energy
+- awakened: each turn, gain energy = number of situations
+- runic pyramid, unceasing top

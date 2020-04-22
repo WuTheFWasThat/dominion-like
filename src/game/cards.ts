@@ -235,7 +235,7 @@ export const Park: Card = register_kingdom_card({
   cost_range: [8, 16],
   description: '+1 victory point for every card in your hand',
   fn: function* (state: GameState) {
-    let n = game.count_in_deck(state, (card) => card.get('name') === Park.get('name'));
+    let n = game.count_in_deck(state, (card) => true, ['hand']);
     return state.set('victory', state.get('victory') + n);
   }
 });
@@ -976,21 +976,21 @@ export const Adrenaline: Event = register_kingdom_event({
 });
 */
 
-export const Greed: Event = register_kingdom_event({
-  name: 'Greed',
+export const Philanthropy: Event = register_kingdom_event({
+  name: 'Philanthropy',
   energy_range: [1, 2],
-  cost_range: [10, 25],
+  cost_range: [10, 30],
   description: 'Convert all your $ to victory points.',
   fn: function* (state: GameState) {
-    // state = trash_event(state, Greed.get('name'));
+    // state = trash_event(state, Philanthropy.get('name'));
     state = state.set('victory', state.get('victory') + state.get('money'));
     return state.set('money', 0);
   },
 });
 
 
-export const Patience: Event = register_kingdom_event({
-  name: 'Patience',
+export const Greed: Event = register_kingdom_event({
+  name: 'Greed',
   energy_range: [0, 0],
   cost_range: [0, 0],
   description: 'Convert all your victory points to $.',
