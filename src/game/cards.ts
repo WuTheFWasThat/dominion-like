@@ -934,6 +934,19 @@ export const Greed: Event = register_kingdom_event({
 });
 
 
+export const Patience: Event = register_kingdom_event({
+  name: 'Patience',
+  energy_range: [0, 0],
+  cost_range: [0, 0],
+  description: 'Convert all your victory points to $.',
+  fn: function* (state: GameState) {
+    // state = trash_event(state, Greed.get('name'));
+    state = state.set('money', state.get('money') + state.get('victory'));
+    return state.set('victory', 0);
+  },
+});
+
+
 export const Expedite: Event = register_kingdom_event({
   name: 'Expedite',
   energy_range: [1, 1],
@@ -1006,8 +1019,8 @@ export const MarketHours: Situation = register_kingdom_situation({
   }
 });
 
-export const JunkYard: Situation = register_kingdom_situation({
-  name: 'Junk Yard',
+export const Trader: Situation = register_kingdom_situation({
+  name: 'Trader',
   description: 'Whenever you trash a card, gain a silver',
   fn: function* (state: GameState) {
     function* hook(state: GameState, _card: Card) {
@@ -1018,20 +1031,6 @@ export const JunkYard: Situation = register_kingdom_situation({
     return state;
   }
 });
-
-export const Compost: Situation = register_kingdom_situation({
-  name: 'Compost',
-  description: 'Whenever you trash a card, +1 VP',
-  fn: function* (state: GameState) {
-    function* hook(state: GameState, _card: Card) {
-      state = state.set('victory', state.get('victory') + 1);
-      return state;
-    }
-    state = state.set('trash_hooks', state.get('trash_hooks').push(hook))
-    return state;
-  }
-});
-
 
 export const StrayHound: Situation = register_kingdom_situation({
   name: 'Stray Hound',
@@ -1059,6 +1058,32 @@ export const StrayHound: Situation = register_kingdom_situation({
       return state;
     }
     state = state.set('draw_hooks', state.get('draw_hooks').push(hook))
+    return state;
+  }
+});
+
+export const Compost: Situation = register_kingdom_situation_to_buy({
+  name: 'Compost',
+  description: 'Whenever you trash a card, +1 VP',
+  fn: function* (state: GameState) {
+    function* hook(state: GameState, _card: Card) {
+      state = state.set('victory', state.get('victory') + 1);
+      return state;
+    }
+    state = state.set('trash_hooks', state.get('trash_hooks').push(hook))
+    return state;
+  }
+});
+
+export const JunkYard: Situation = register_kingdom_situation_to_buy({
+  name: 'JunkYard',
+  description: 'Whenever you trash a card, +$1',
+  fn: function* (state: GameState) {
+    function* hook(state: GameState, _card: Card) {
+      state = state.set('victory', state.get('victory') + 1);
+      return state;
+    }
+    state = state.set('trash_hooks', state.get('trash_hooks').push(hook))
     return state;
   }
 });

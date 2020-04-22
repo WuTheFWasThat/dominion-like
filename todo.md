@@ -43,3 +43,5 @@ positive situations that you have to buy (expensive in terms of energy)
 - bug in vassal and sacrific (discards card)
 
 make an in-play area...
+
+- gain money equal to energy?
