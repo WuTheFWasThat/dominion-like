@@ -73,110 +73,133 @@ class App extends React.Component<AppProps, AppState> {
 
     return (
       <div style={{width: '100%'}}>
-        <div style={{color: 'red'}}>
-            {this.props.state.get('error') || this.state.error || ''}
-        </div>
-        Energy spent: {this.props.state.get('energy')}
-        <br/>
-        Money: {this.props.state.get('money')}
-        <br/>
-        Points: {this.props.state.get('victory')}
-        <br/>
-        <br/>
+        <div style={{display: "flex", flexDirection: "row", width: '100%'}}>
+          <div style={{flexBasis: '50%', flexGrow: 0, padding: '10px'}}>
+            <div style={{color: 'red'}}>
+                {this.props.state.get('error') || this.state.error || ''}
+            </div>
+            Energy spent: {this.props.state.get('energy')}
+            <br/>
+            Money: {this.props.state.get('money')}
+            <br/>
+            Points: {this.props.state.get('victory')}
+            <br/>
+            <br/>
 
-        <div onClick={() => {
-          this.props.choice_cb({
-            type: 'undo',
-          } as game.UndoChoice);
-        }} style={{border: '1px solid red', display: 'inline-block'}}>
-          Undo
-        </div>
-        <br/>
-        <br/>
+            <div onClick={() => {
+              this.props.choice_cb({
+                type: 'undo',
+              } as game.UndoChoice);
+            }} style={{border: '1px solid red', display: 'inline-block'}}>
+              Undo
+            </div>
+            <br/>
+            <br/>
 
-        <b>
-        {instruction_text}
-        </b>
-        {(() => {
-          if (this.props.question) {
-            if (game.isPickHandQuestion(this.props.question)) {
-              let n = this.state.handIndices.length;
-              if (this.props.question.min !== undefined) {
-                if (n < this.props.question.min) {
-                  return null;
-                }
-              }
-              if (this.props.question.max !== undefined) {
-                if (n > this.props.question.max) {
-                  return null;
-                }
-              }
-              let onClick = () => {
-                this.props.choice_cb({
-                  type: 'pickhand',
-                  indices: this.state.handIndices,
-                } as game.PickHandChoice);
-                this.setState({
-                  handIndices: [],
-                });
-              };
-              return (
-                <div onClick={onClick}>
-                    Done choosing
-                </div>
-              );
-            } else if (game.isPickDrawQuestion(this.props.question)) {
-              let n = this.state.drawIndices.length;
-              if (this.props.question.min !== undefined) {
-                if (n < this.props.question.min) {
-                  return null;
-                }
-              }
-              if (this.props.question.max !== undefined) {
-                if (n > this.props.question.max) {
-                  return null;
-                }
-              }
-              let onClick = () => {
-                this.props.choice_cb({
-                  type: 'pickdraw',
-                  indices: this.state.drawIndices,
-                } as game.PickDrawChoice);
-                this.setState({
-                  drawIndices: [],
-                });
-              };
-              return (
-                <div onClick={onClick}>
-                    Done choosing
-                </div>
-              );
-            }
-          }
-        })()}
-        {(() => {
-          if (this.props.question) {
-            if (game.isPickQuestion(this.props.question)) {
-              return (<div>
-                  {
-                    this.props.question.options.map((option, i) => {
-                      let onClick = () => {
-                        this.props.choice_cb({
-                          type: 'pick',
-                          choice: i,
-                        } as game.PickChoice);
-                      };
-                      return (
-                        <div key={i} onClick={onClick}>
-                            {option}
-                        </div>
-                      );
-                    })
+            <b>
+            {instruction_text}
+            </b>
+            {(() => {
+              if (this.props.question) {
+                if (game.isPickHandQuestion(this.props.question)) {
+                  let n = this.state.handIndices.length;
+                  if (this.props.question.min !== undefined) {
+                    if (n < this.props.question.min) {
+                      return null;
+                    }
                   }
-              </div>)
-            }
-          }
-        })()}
+                  if (this.props.question.max !== undefined) {
+                    if (n > this.props.question.max) {
+                      return null;
+                    }
+                  }
+                  let onClick = () => {
+                    this.props.choice_cb({
+                      type: 'pickhand',
+                      indices: this.state.handIndices,
+                    } as game.PickHandChoice);
+                    this.setState({
+                      handIndices: [],
+                    });
+                  };
+                  return (
+                    <div onClick={onClick}>
+                        Done choosing
+                    </div>
+                  );
+                } else if (game.isPickDrawQuestion(this.props.question)) {
+                  let n = this.state.drawIndices.length;
+                  if (this.props.question.min !== undefined) {
+                    if (n < this.props.question.min) {
+                      return null;
+                    }
+                  }
+                  if (this.props.question.max !== undefined) {
+                    if (n > this.props.question.max) {
+                      return null;
+                    }
+                  }
+                  let onClick = () => {
+                    this.props.choice_cb({
+                      type: 'pickdraw',
+                      indices: this.state.drawIndices,
+                    } as game.PickDrawChoice);
+                    this.setState({
+                      drawIndices: [],
+                    });
+                  };
+                  return (
+                    <div onClick={onClick}>
+                        Done choosing
+                    </div>
+                  );
+                }
+              }
+            })()}
+            {(() => {
+              if (this.props.question) {
+                if (game.isPickQuestion(this.props.question)) {
+                  return (<div>
+                      {
+                        this.props.question.options.map((option, i) => {
+                          let onClick = () => {
+                            this.props.choice_cb({
+                              type: 'pick',
+                              choice: i,
+                            } as game.PickChoice);
+                          };
+                          return (
+                            <div key={i} onClick={onClick}>
+                                {option}
+                            </div>
+                          );
+                        })
+                      }
+                  </div>)
+                }
+              }
+            })()}
+          </div>
+
+          <div style={{flexBasis: '50%', flexGrow: 0, padding: '10px'}}>
+            <h2>
+                Situations
+            </h2>
+            <div style={{display: "flex", flexDirection: "row", width: '100%'}}>
+              <div style={{flexBasis: '100%', flexGrow: 0, padding: '10px'}}>
+                <div>
+                  {this.props.state.get('situations').map((situation, i) => {
+                    return (
+                      <SituationComponent key={i} state={this.props.state} situation={situation}/>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        <br/>
+
+        </div>
         <br/>
         <br/>
 
@@ -271,22 +294,6 @@ class App extends React.Component<AppProps, AppState> {
                       &nbsp;
                     <SituationComponent key={i} state={this.props.state} situation={situation_supply.get('situation')} onClick={onClick}/>
                   </span>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-        <br/>
-
-        <h2>
-            Situations
-        </h2>
-        <div style={{display: "flex", flexDirection: "row", width: '100%'}}>
-          <div style={{flexBasis: '100%', flexGrow: 0, padding: '10px'}}>
-            <div>
-              {this.props.state.get('situations').map((situation, i) => {
-                return (
-                  <SituationComponent key={i} state={this.props.state} situation={situation}/>
                 );
               })}
             </div>

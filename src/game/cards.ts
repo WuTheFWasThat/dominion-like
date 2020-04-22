@@ -396,8 +396,8 @@ export const Horse: Card = register_kingdom_card({
 
 export const Hound: Card = register_kingdom_card({
   name: 'Hound',
-  energy: 1,
-  cost_range: [1, 2],
+  energy: 0,
+  cost_range: [1, 4],
   description: '+1 card.  When discarded, +1 card',
   fn: function* (state: GameState) {
     state = (yield* draw(state, 1)).state;
@@ -831,7 +831,7 @@ export const Gambit: Card = register_kingdom_card({
 
 export const Reboot: Event = make_event({
   name: 'Reboot',
-  energy_range: [1, 1],
+  energy_range: [1, 2],
   setup: function (state: GameState) {
     state = state.set('extra', state.get('extra').set('reboot_cards', 5));
     return state;
@@ -921,7 +921,7 @@ export const Favor: Event = register_kingdom_event({
 
 export const Inflation: Event = register_kingdom_event({
   name: 'Inflation',
-  energy_range: [0, 0],
+  energy_range: [0, 2],
   cost_range: [0, 0],
   description: 'Once per game, gain $20.  All cards cost $1 extra',
   // Crazy version:  'Gain $20.  All cards and events cost $1 extra', increases cost of itself and reboot..
@@ -1014,7 +1014,8 @@ export const Expedite: Event = register_kingdom_event({
 export const Boost: Event = register_kingdom_event({
   name: 'Boost',
   description: 'Reboot gives 2 extra cards',
-  energy_range: [5, 15],
+  cost_range: [0, 5],
+  energy_range: [4, 8],
   fn: function* (state: GameState) {
     let extra = state.get('extra');
     return state.set('extra', extra.set('reboot_cards', extra.get('reboot_cards') + 2));
