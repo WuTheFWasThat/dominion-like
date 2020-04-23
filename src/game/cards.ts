@@ -1064,21 +1064,6 @@ export const Reshuffle: Situation = make_situation({
   }
 });
 
-export const Riches: Situation = register_kingdom_situation({
-  name: 'Riches',
-  description: 'If you have $200, the game ends',
-  fn: function* (state: GameState) {
-    function* hook(state: GameState) {
-      if (state.get('money') >= 200) {
-        state = state.set('ended', true);
-      }
-      return state;
-    }
-    state = state.set('turn_hooks', state.get('turn_hooks').push(hook))
-    return state;
-  }
-});
-
 export const MarketHours: Situation = register_kingdom_situation({
   name: 'Market Hours',
   description: 'You may only buy cards when energy spent is a multiple of 3',
@@ -1097,6 +1082,28 @@ export const Trader: Situation = register_kingdom_situation({
       return state;
     }
     state = state.set('trash_hooks', state.get('trash_hooks').push(hook))
+    return state;
+  }
+});
+
+export const TimeEater: Situation = register_kingdom_situation({
+  name: 'Time Eater',
+  description: (state: GameState) => {
+    let x = state.get('extra').get('time_eater');
+    return `Every 12 plays/buys, pay one energy (${x}/12)`;
+  },
+  fn: function* (state: GameState) {
+    state = state.set('extra', state.get('extra').set('time_eater', 0));
+    function* hook(state: GameState): Effect {
+      let x = (state.get('extra').get('time_eater') + 1) % 12;
+      state = state.set('extra', state.get('extra').set('time_eater', x));
+      if (x === 0) {
+        state = state.set('energy', state.get('energy') + 1);
+        state = state.set('log', state.get('log').push('Paid 1 energy to time eater'));
+      }
+      return state;
+    }
+    state = state.set('turn_hooks', state.get('turn_hooks').push(hook))
     return state;
   }
 });
@@ -1132,6 +1139,24 @@ export const StrayHound: Situation = register_kingdom_situation({
   }
 });
 */
+
+/*
+export const Riches: Situation = register_kingdom_situation_to_buy({
+  name: 'Riches',
+  description: 'If you have $200, the game ends',
+  fn: function* (state: GameState) {
+    function* hook(state: GameState) {
+      if (state.get('money') >= 200) {
+        state = state.set('ended', true);
+      }
+      return state;
+    }
+    state = state.set('turn_hooks', state.get('turn_hooks').push(hook))
+    return state;
+  }
+});
+*/
+
 
 export const Compost: Situation = register_kingdom_situation_to_buy({
   name: 'Compost',
