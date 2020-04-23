@@ -13,7 +13,7 @@ export type PlayerChoice = {
 export type Player = AsyncGenerator<PlayerChoice, PlayerChoice, [GameState, PlayerQuestion | null]>;
 
 export type Effect<T=GameState> = Generator<[GameState, PlayerQuestion | null], T, PlayerChoice>;
-export type EffectFn = (state: GameState) => Effect;
+export type EffectFn<T=GameState> = (state: GameState) => Effect<T>;
 
 export type RawSituation = {
   name: string,
@@ -37,10 +37,12 @@ export type RawCard = {
   description: string | ((state: GameState) => string),
   cost_range?: [number, number],
   setup?: (state: GameState) => GameState,
-  fn: EffectFn,
+
+  // these two should just be combined...
+  fn: (state: GameState, me: Card) => Effect<[GameState, Card | null]>,
+
   extra?: Immutable.Map<string, any>,
-  cleanup?: (state: GameState, card: Card) => Effect,
-  discard?: (state: GameState, card: Card) => Effect,
+  discard_hook?: (state: GameState, card: Card) => Effect<[GameState, Card | null]>,
   energy: number,
 };
 export type Card = Immutable.Record<RawCard>;
@@ -57,7 +59,7 @@ export type RawEvent = {
   cost_range?: [number, number],
   energy_range?: [number, number],
   setup?: (state: GameState) => GameState,
-  fn: EffectFn,
+  fn: (state: GameState, me: Event) => Effect<[GameState, Event]>,
   extra?: Immutable.Map<string, any>,
   cleanup?: (state: GameState, card: Card) => Effect,
   discard?: (state: GameState, card: Card) => Effect,
@@ -309,13 +311,8 @@ export function* draw(state: GameState, ndraw?: number): Effect<{state: GameStat
   return { state, cards: drawn_cards };
 }
 
-/* eslint-disable require-yield */
-function* _default_discard(state: GameState, card: Card) {
-  return state.set('discard', state.get('discard').push(card));
-}
-/* eslint-enable require-yield */
 
-export function* discard(state: GameState, indices: Array<number>): Effect {
+export function* discard_from_hand(state: GameState, indices: Array<number>): Effect {
   indices = indices.slice().sort((a,b) => b-a);
   let cards: Array<Card> = [];
   for (let index of indices) {
@@ -327,14 +324,25 @@ export function* discard(state: GameState, indices: Array<number>): Effect {
     cards.push(card);
   }
   for (let card of cards) {
-    let fn = card.get('discard') || _default_discard;
-    state = yield* fn(state, card);
+    state = (yield* discard(state, card))[0];
   }
   if (cards.length) {
     let names = (cards).map((card) => card.get('name')).join(', ');
     state = state.set('log', state.get('log').push(`Discarded ${names}`));
   }
   return state;
+}
+
+export function* discard(state: GameState, card: Card): Effect<[GameState, Card | null]> {
+  let fn = card.get('discard_hook');
+  let maybe_card: Card | null = card;
+  if (fn) {
+    [state, maybe_card] = yield* fn(state, card);
+  }
+  if (maybe_card !== null) {
+    state = state.set('discard', state.get('discard').push(maybe_card));
+  }
+  return [state, maybe_card] as [GameState, Card | null];
 }
 
 export function* trash(state: GameState, card: Card): Effect {
@@ -378,32 +386,32 @@ export function* gain(state: GameState, cards: Array<Card>, msg: string='', type
   }
   let names = (cards).map((card) => card.get('name')).join(', ');
   state = state.set('log', state.get('log').push(`Gained ${names}${msg}`));
+  // TODO: gain hooks
   return state;
 }
 
-/* eslint-disable require-yield */
-function* _default_cleanup(state: GameState, card: Card) {
-  return state.set('discard', state.get('discard').push(card));
-}
-/* eslint-enable require-yield */
-
-export function* play_from_hand(state: GameState, index: number): Effect {
+export function* play_from_hand(state: GameState, index: number): Effect<[GameState, Card | null]> {
   let card = state.get('hand').get(index);
   state = state.set('hand', state.get('hand').remove(index));
   if (card === undefined) {
     throw Error(`Tried to play ${index} which does not exist`);
   }
-  state = yield* card.get('fn')(state);
-  let cleanup = card.get('cleanup') || _default_cleanup;
-  state = yield* cleanup(state, card);
-  return state;
+  return yield* play(state, card);
 }
 
-export function* play(state: GameState, card: Card): Effect {
-  state = yield* card.get('fn')(state);
-  let cleanup = card.get('cleanup') || _default_cleanup;
-  state = yield* cleanup(state, card);
-  return state;
+export function* play(state: GameState, card: Card): Effect<[GameState, Card | null]> {
+  let maybe_card;
+  [state, maybe_card] = yield* card.get('fn')(state, card);
+  if (maybe_card === null) {
+    return [state, null] as [GameState, null];
+  }
+  card = maybe_card;
+  [state, maybe_card] = yield* discard(state, card);
+  if (maybe_card === null) {
+    return [state, null] as [GameState, null];
+  }
+  card = maybe_card;
+  return [state, card] as [GameState, Card];
 }
 
 export interface NoChoice extends PlayerChoice {
@@ -524,7 +532,7 @@ export interface PickChoice extends PlayerChoice {
 };
 
 
-export async function applyEffect(state: GameState, effect: EffectFn, player: Player): Promise<GameState> {
+export async function applyEffect<T>(state: GameState, effect: EffectFn<T>, player: Player): Promise<T> {
   let init_state = state;
   let gen = effect(state)
   let result = await gen.next(null as any);  // hmm
@@ -533,7 +541,7 @@ export async function applyEffect(state: GameState, effect: EffectFn, player: Pl
     [state, question] = result.value;
     let choice = (await player.next([state, question])).value;
     if (isUndo(choice)) {
-      return await applyEffect(init_state, effect, player);
+      return await applyEffect<T>(init_state, effect, player);
     }
     result = await gen.next(choice);
   }
@@ -555,6 +563,7 @@ function trashSupplyCard(state: GameState, cardName: string): GameState {
 }
 */
 
+/*
 export function trash_event(state: GameState, cardName: string): GameState {
   for (let i = 0; i < state.get('events').size; i++) {
     const supplyCard = state.get('events').get(i);
@@ -567,6 +576,7 @@ export function trash_event(state: GameState, cardName: string): GameState {
   }
   throw Error(`No such supply card found ${cardName}`);
 }
+*/
 
 
 export function getSupplyCard(state: GameState, cardName: string): { index: number, supplyCard: SupplyCard | null} {
@@ -665,21 +675,24 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     // buys cost energy too?
     // state = state.set('energy', state.get('energy') + 1);
   } else if (isEvent(choice)) {
-    const supply_event = getSupplyEvent(state, choice.cardname).supplyEvent;
-    if (supply_event === null) {
+    const result = getSupplyEvent(state, choice.cardname);
+    let event_supply = result.supplyEvent;
+    let index = result.index;
+    if (event_supply === null) {
       state = state.set('error', 'Card not in supply?');
       return state;
     }
-    if (state.get('money') < supply_event.get('cost')) {
+    let event: Event = event_supply.get('event');
+    if (state.get('money') < event_supply.get('cost')) {
       state = state.set('error', 'Not enough money');
       return state;
     }
     state = state.set('error', null);
-    state = state.set('money', state.get('money') - supply_event.get('cost'));
-    state = state.set('log', state.get('log').push(`Bought a ${choice.cardname}`));
-    state = await applyEffect(state, supply_event.get('event').get('fn'), player);
-    // buys cost energy too
-    state = state.set('energy', state.get('energy') + supply_event.get('energy'));
+    state = state.set('money', state.get('money') - event_supply.get('cost'));
+    state = state.set('energy', state.get('energy') + event_supply.get('energy'));
+    state = state.set('log', state.get('log').push(`Bought event ${choice.cardname}`));
+    [state, event] = await applyEffect(state, (state) => event.get('fn')(state, event), player);
+    state = state.set('events', state.get('events').set(index, event_supply.set('event', event)));
   } else if (isPlay(choice)) {
     let card = state.get('hand').get(choice.index);
     if (card === undefined) {
@@ -694,7 +707,7 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     */
     state = state.set('error', null);
     state = state.set('log', state.get('log').push(`Played a ${card.get('name')}`));
-    state = await applyEffect(state, (state) => play_from_hand(state, choice.index), player);
+    state = (await applyEffect(state, (state) => play_from_hand(state, choice.index), player))[0];
     state = state.set('energy', state.get('energy') + card.get('energy'));
   } else if (isBuySituation(choice)) {
     let result = getSupplySituation(state, choice.name);

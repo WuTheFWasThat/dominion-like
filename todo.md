@@ -45,3 +45,6 @@ paul's idea: draw doesn't reshuffle, only reboot can
 - awakened: each turn, gain energy = number of situations
 
 - something like bullet time
+
+- a card that gets "discarded" into deck (like tantrum)
+- something expensive to play that powers up upon discard
