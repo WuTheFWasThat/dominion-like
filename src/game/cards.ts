@@ -847,6 +847,7 @@ export const Reboot: Event = make_event({
   energy_range: [1, 2],
   setup: function (state: GameState) {
     state = state.set('extra', state.get('extra').set('reboot_cards', 5));
+    state = state.set('extra', state.get('extra').set('reboot_discard', true));
     return state;
   },
   description: (state: GameState) => {
@@ -855,12 +856,14 @@ export const Reboot: Event = make_event({
   },
   fn: function* (state: GameState) {
     state = state.set('money', 0);
-    let n = state.get('hand').size;
-    let indices = [];
-    for (let i = 0; i < n; i++) {
-      indices.push(i);
+    if (state.get('extra').get('reboot_discard')) {
+      let n = state.get('hand').size;
+      let indices = [];
+      for (let i = 0; i < n; i++) {
+        indices.push(i);
+      }
+      state = yield* discard(state, indices);
     }
-    state = yield* discard(state, indices);
     state = (yield* draw(state, state.get('extra').get('reboot_cards'))).state;
     return state;
   }
@@ -1035,6 +1038,17 @@ export const Boost: Event = register_kingdom_event({
   }
 });
 
+export const RunicPyramid: Event = register_kingdom_event({
+  name: 'Runic Pyramid',
+  description: 'Reboot doesn\'t discard your hand',
+  cost_range: [0, 5],
+  energy_range: [6, 12],
+  fn: function* (state: GameState) {
+    let extra = state.get('extra');
+    return state.set('extra', extra.set('reboot_discard', false));
+  }
+});
+
 
 export const Triumph: Situation = make_situation({
   name: 'Triumph',
@@ -1185,18 +1199,6 @@ export const JunkYard: Situation = register_kingdom_situation_to_buy({
     return state;
   }
 });
-
-/*
-export const Boost: Situation = register_kingdom_situation_to_buy({
-  name: 'Boost',
-  description: 'Reboot gives 2 extra cards',
-  energy_range: [5, 15],
-  fn: function* (state: GameState) {
-    let extra = state.get('extra');
-    return state.set('extra', extra.set('reboot_cards', extra.get('reboot_cards') + 2));
-  }
-});
-*/
 
 
 console.log(KINGDOM_CARDS);

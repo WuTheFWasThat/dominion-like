@@ -42,8 +42,7 @@ OR
 paul's idea: draw doesn't reshuffle, only reboot can
 
 - gain money equal to energy?
-- time eater: every 12 cards played, gain an energy
 - awakened: each turn, gain energy = number of situations
-- runic pyramid, unceasing top
+- unceasing top
 
 - something like bullet time
