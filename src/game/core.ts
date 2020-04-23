@@ -724,8 +724,10 @@ async function playTurn(state: GameState, choice: PlayerChoice, player: Player) 
     state = state.set('money', state.get('money') - supply_situation.get('cost'));
     state = state.set('energy', state.get('energy') + supply_situation.get('energy'));
     state = state.set('log', state.get('log').push(`Bought a ${choice.name}`));
-    state = await applyEffect(state, supply_situation.get('situation').get('fn'), player);
+    let situation = supply_situation.get('situation');
+    state = await applyEffect(state, situation.get('fn'), player);
     state = state.set('situation_supply', state.get('situation_supply').remove(result.index));
+    state = state.set('situations', state.get('situations').push(situation));
   } else {
     state = state.set('error', 'Unexpected choice ' + JSON.stringify(choice));
   }
