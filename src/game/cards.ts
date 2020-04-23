@@ -1187,7 +1187,7 @@ export const Compost: Situation = register_kingdom_situation_to_buy({
 });
 
 export const JunkYard: Situation = register_kingdom_situation_to_buy({
-  name: 'JunkYard',
+  name: 'Junk Yard',
   energy_range: [2, 5],
   description: 'Whenever you trash a card, +$1',
   fn: function* (state: GameState) {
@@ -1196,6 +1196,22 @@ export const JunkYard: Situation = register_kingdom_situation_to_buy({
       return state;
     }
     state = state.set('trash_hooks', state.get('trash_hooks').push(hook))
+    return state;
+  }
+});
+
+export const PerpetualMotion: Situation = register_kingdom_situation_to_buy({
+  name: 'Perpetual Motion',
+  energy_range: [2, 5],
+  description: 'If your hand is empty, draw 1 card',
+  fn: function* (state: GameState) {
+    function* hook(state: GameState) {
+      if (state.get('hand').size === 0) {
+        state = (yield* draw(state, 1)).state;
+      }
+      return state;
+    }
+    state = state.set('turn_hooks', state.get('turn_hooks').push(hook))
     return state;
   }
 });

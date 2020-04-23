@@ -43,6 +43,5 @@ paul's idea: draw doesn't reshuffle, only reboot can
 
 - gain money equal to energy?
 - awakened: each turn, gain energy = number of situations
-- unceasing top
 
 - something like bullet time
