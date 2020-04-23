@@ -517,11 +517,10 @@ export const Sacrifice: Card = register_kingdom_card({
       throw Error('Something went wrong');
     }
     let index = choice.indices[0];
-    state = state.set('hand', state.get('hand').remove(index));
-    // TODO: do this more elegantly to allow cleanup hooks?
-    // e.g. fool's gold should still increase by 1 in case it gets trashed
-    // state = yield* play(state, card);
     let card = state.get('hand').get(index) as Card;
+    state = state.set('hand', state.get('hand').remove(index));
+    // TODO: do this more elegantly?
+    // state = yield* play(state, card);
     let maybe_card;
     [state, maybe_card] = yield* card.get('fn')(state, card);
     if (maybe_card === null) {
