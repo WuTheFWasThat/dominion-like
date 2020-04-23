@@ -649,7 +649,7 @@ export function count_in_deck(state: GameState, fn: (card: Card) => boolean, typ
   return count;
 }
 
-async function playTurn(state: GameState, choice: PlayerChoice, player: Player) {
+export async function playTurn(state: GameState, choice: PlayerChoice, player: Player) {
   if (isBuy(choice)) {
     if (state.get('extra').get('market_hours')) {
       if (state.get('energy') % 3 !== 0) {

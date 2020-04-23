@@ -730,6 +730,7 @@ export const ThroneRoom: Card = register_kingdom_card({
       state = state.set('log', state.get('log').push(`Throne room lost track of ${card.get('name')}`));
       return [state, me] as [GameState, Card];
     }
+    card = maybe_card;
     state = (yield* discard(state, card))[0];
     return [state, me] as [GameState, Card];
   }
