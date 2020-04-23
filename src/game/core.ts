@@ -89,6 +89,7 @@ export type GameState = Immutable.Record<{
   turn_hooks: Immutable.List<EffectFn>,
   trash_hooks: Immutable.List<(state: GameState, card: Card) => Effect>,
   draw_hooks: Immutable.List<(state: GameState, card: Card) => Effect>,
+  reshuffle_hooks: Immutable.List<(state: GameState) => Effect>,
   log: Immutable.List<string>,
   extra: Immutable.Map<string, any>,
   random: random.MersenneTwister19937,
@@ -102,7 +103,36 @@ export const InitialState: GameState = Immutable.Record({
   energy: 0,
   money: 0,
   victory: 0,
-  supply: Immutable.List<SupplyCard>([
+  supply: Immutable.List<SupplyCard>([]),
+  events: Immutable.List<SupplyEvent>([]),
+  situation_supply: Immutable.List<SupplySituation>([
+  ]),
+  draw: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Donkey, cards.Donkey]),
+  discard: Immutable.List([]),
+  hand: Immutable.List([]),
+  trash: Immutable.List([]),
+  situations: Immutable.List([
+    cards.Triumph,
+    cards.Reshuffle,
+  ]),
+  turn_hooks: Immutable.List([]),
+  trash_hooks: Immutable.List([]),
+  draw_hooks: Immutable.List([]),
+  reshuffle_hooks: Immutable.List([]),
+  log: Immutable.List([]),
+  extra: Immutable.Map<string, any>([]),
+  random: null as any,
+  seed: 0,
+  error: null,
+  previous: null,
+})();
+
+export function initial_state(seed: number | null): GameState {
+  let actual_seed = seed === null ? random.createEntropy()[0] : seed;
+  const mt = random.MersenneTwister19937.seed(actual_seed);
+  let state: GameState = InitialState;
+  // TODO: sometimes include territory/diamond, colony/platinum
+  state = state.set('supply', state.get('supply').push(
     Immutable.Record({
       card: cards.Copper,
       cost: 1,
@@ -135,39 +165,7 @@ export const InitialState: GameState = Immutable.Record({
       card: cards.Mule,
       cost: 2,
     })(),
-  ]),
-  events: Immutable.List([
-    Immutable.Record({
-      event: cards.Reboot,
-      cost: 0,
-      energy: 1,
-    })(),
-  ]),
-  situation_supply: Immutable.List<SupplySituation>([
-  ]),
-  draw: Immutable.List([cards.Copper, cards.Copper, cards.Copper, cards.Copper, cards.Estate, cards.Estate, cards.Donkey, cards.Donkey]),
-  discard: Immutable.List([]),
-  hand: Immutable.List([]),
-  trash: Immutable.List([]),
-  situations: Immutable.List([
-    cards.Triumph,
-  ]),
-  turn_hooks: Immutable.List([]),
-  trash_hooks: Immutable.List([]),
-  draw_hooks: Immutable.List([]),
-  log: Immutable.List([]),
-  extra: Immutable.Map<string, any>([]),
-  random: null as any,
-  seed: 0,
-  error: null,
-  previous: null,
-})();
-
-export function initial_state(seed: number | null): GameState {
-  let actual_seed = seed === null ? random.createEntropy()[0] : seed;
-  const mt = random.MersenneTwister19937.seed(actual_seed);
-  let state: GameState = InitialState;
-  // TODO: sometimes include territory/diamond, colony/platinum
+  ));
   const kingdom = random.sample(mt, Object.keys(cards.KINGDOM_CARDS), 8).map((k) => cards.KINGDOM_CARDS[k]);
   kingdom.forEach((card) => {
     let cost_range = card.get('cost_range') || [1, 5];
@@ -183,6 +181,14 @@ export function initial_state(seed: number | null): GameState {
       })()
     ));
   });
+
+  state = state.set('events', state.get('events').push(
+    Immutable.Record({
+      event: cards.Reboot,
+      cost: 0,
+      energy: random.integer(0, 3)(mt),
+    })(),
+  ));
   const kingdom_events = random.sample(mt, Object.keys(cards.KINGDOM_EVENTS), 4).map((k) => cards.KINGDOM_EVENTS[k]);
   kingdom_events.forEach((event) => {
     let cost_range = event.get('cost_range') || [0, 5];
@@ -251,18 +257,23 @@ function consumeRandom<T>(state: GameState, fn: (r: random.MersenneTwister19937)
 }
 
 
-export function scry(state: GameState): [GameState, Card | null] {
+export function* scry(state: GameState): Effect<[GameState, Card | null]> {
   // get a card from the deck, but just return it (with new deck state)
   // caller should then do something with the card
   if (state.get('draw').size === 0) {
+    // nothing to draw
+    if (state.get('discard').size === 0) {
+      return [state, null] as [GameState, null];
+    }
+    let hooks = state.get('reshuffle_hooks');
+    for (let hook of hooks) {
+      state = yield* hook(state);
+    }
+    state = state.set('log', state.get('log').push('Reshuffled'));
     state = state.set('draw', state.get('discard'));
     state = state.set('discard', Immutable.List());
   }
   const n = state.get('draw').size;
-  if (n === 0) {
-    // nothing to draw
-    return [state, null]
-  }
   let i;
   [state, i] = consumeRandom(state, random.integer(0, n-1));
   let drawn = state.get('draw').get(i);
@@ -270,7 +281,7 @@ export function scry(state: GameState): [GameState, Card | null] {
     throw Error(`Unable to draw? ${n} ${i}`)
   }
   state = state.set('draw', state.get('draw').delete(i));
-  return [state, drawn]
+  return [state, drawn] as [GameState, Card];
 }
 
 export function* draw(state: GameState, ndraw?: number): Effect<{state: GameState, cards: Array<Card>}> {
@@ -281,7 +292,7 @@ export function* draw(state: GameState, ndraw?: number): Effect<{state: GameStat
   let hooks = state.get('draw_hooks');
   for (let i = 0; i < ndraw; i++) {
     let card;
-    [state, card] = scry(state);
+    [state, card] = yield* scry(state);
     if (card === null) {
       continue;
     }

@@ -37,9 +37,6 @@ positive situations that you have to buy (expensive in terms of energy)
   - reboot reduces $ by 2, doesn't remove it
   - give +$1 per discard (too good b/c of reboot?)
 
-- bug in library
-- bug in vassal and sacrific (discards card)
-
 make an in-play area...
 OR
 paul's idea: draw doesn't reshuffle, only reboot can
@@ -48,3 +45,5 @@ paul's idea: draw doesn't reshuffle, only reboot can
 - time eater: every 12 cards played, gain an energy
 - awakened: each turn, gain energy = number of situations
 - runic pyramid, unceasing top
+
+- something like bullet time

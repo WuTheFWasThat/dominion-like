@@ -731,7 +731,7 @@ export const Vassal: Card = register_kingdom_card({
   fn: function* (state: GameState) {
     state = state.set('money', state.get('money') + 2);
     let card;
-    [state, card] = scry(state);
+    [state, card] = yield* scry(state);
     if (card === null) {
       return state;
     }
@@ -1047,6 +1047,19 @@ export const Triumph: Situation = make_situation({
       return state;
     }
     state = state.set('turn_hooks', state.get('turn_hooks').push(hook))
+    return state;
+  }
+});
+
+export const Reshuffle: Situation = make_situation({
+  name: 'Reshuffle',
+  description: 'Every time you reshuffle your deck, +1 energy',
+  fn: function* (state: GameState) {
+    function* hook(state: GameState) {
+      state = state.set('energy', state.get('energy') + 1);
+      return state;
+    }
+    state = state.set('reshuffle_hooks', state.get('reshuffle_hooks').push(hook))
     return state;
   }
 });
