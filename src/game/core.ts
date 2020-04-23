@@ -363,13 +363,21 @@ export function* trash_from_deck(state: GameState, indices: Array<number>, type:
   return state;
 }
 
-export function gain(state: GameState, cardName: string): GameState {
+export function* gain_supply(state: GameState, cardName: string, n: number = 1, msg: string=''): Effect {
   let supply_card = getSupplyCard(state, cardName).supplyCard;
   if (supply_card === null) {
     throw Error(`Tried to gain ${cardName} which does not exist`);
   }
-  state = state.set('discard', state.get('discard').push(supply_card.get('card')));
-  state = state.set('log', state.get('log').push(`Gained a ${supply_card.get('card').get('name')}`));
+  let card = supply_card.get('card');
+  return yield* gain(state, Array(n).fill(card), msg);
+}
+
+export function* gain(state: GameState, cards: Array<Card>, msg: string='', type: DeckType = 'discard'): Effect {
+  for (let card of cards) {
+    state = state.set(type, state.get(type).push(card));
+  }
+  let names = (cards).map((card) => card.get('name')).join(', ');
+  state = state.set('log', state.get('log').push(`Gained ${names}${msg}`));
   return state;
 }
 
@@ -622,11 +630,11 @@ export function count_in_deck(state: GameState, fn: (card: Card) => boolean, typ
   }
   let count = 0;
   for (let type of types) {
-    state.get(type).forEach((card) => {
+    for (let card of state.get(type)) {
       if (fn(card)) {
         count = count + 1;
       }
-    })
+    }
   }
   return count;
 }

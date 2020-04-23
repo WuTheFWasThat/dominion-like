@@ -4,7 +4,7 @@ import {
   RawCard, RawSituation, RawEvent,
   make_card, make_situation, Card, Situation, make_event, Event,
   GameState, Effect,
-  draw, discard, trash_from_deck, trash, trash_event, gain, scry, play
+  draw, discard, trash_from_deck, trash, trash_event, gain, gain_supply, scry, play
 } from  './core';
 import * as game from  './core';
 
@@ -308,7 +308,7 @@ export const Workshop: Card = register_kingdom_card({
       state = state.set('error', `${choice.cardname} too expensive for Workshop`);
       return state;
     }
-    return gain(state, choice.cardname);
+    return yield* gain(state, [supplyCard.get('card')]);
   }
 });
 
@@ -318,7 +318,7 @@ export const Factory: Card = register_kingdom_card({
   description: 'Gain a card from supply',
   fn: function* (state: GameState) {
     let choice = (yield ([state, {type: 'picksupply', message: 'Pick card to gain for Factory'} as game.PickSupplyQuestion])) as game.PickSupplyChoice;
-    return gain(state, choice.cardname);
+    return yield* gain_supply(state, choice.cardname);
   }
 });
 
@@ -459,8 +459,7 @@ export const Lurker: Card = register_kingdom_card({
         return state;
       }
       state = state.set('trash', state.get('trash').remove(trashchoice.index));
-      state = state.set('discard', state.get('trash').push(card));
-      state = state.set('log', state.get('log').push(`Gained a ${card.get('name')} from trash`));
+      state = yield* gain(state, [card], ' from trash');
       return state;
     } else {
       state = state.set('error', `Unexpected Lurker choice ${choice.choice}`);
@@ -546,9 +545,7 @@ export const Beggar: Card = register_kingdom_card({
   energy: 1,
   description: 'Gain 3 coppers to your hand',
   fn: function* (state: GameState) {
-    state = state.set('hand', state.get('hand').push(Copper));
-    state = state.set('hand', state.get('hand').push(Copper));
-    state = state.set('hand', state.get('hand').push(Copper));
+    state = yield* gain(state, [Copper, Copper, Copper], ' for Beggar', 'hand');
     return state;
   }
 });
@@ -1022,7 +1019,7 @@ export const Expedite: Event = register_kingdom_event({
       return state;
     }
     state = state.set('money', state.get('money') - supply_card.get('cost'));
-    state = state.set('hand', state.get('hand').push(supply_card.get('card')));
+    state = yield* gain(state, [supply_card.get('card')], ' for Expedite', 'hand');
     return state;
   }
 });
@@ -1046,6 +1043,19 @@ export const RunicPyramid: Event = register_kingdom_event({
   fn: function* (state: GameState) {
     let extra = state.get('extra');
     return state.set('extra', extra.set('reboot_discard', false));
+  }
+});
+
+export const WindFall: Event = register_kingdom_event({
+  name: 'WindFall',
+  description: 'If your draw and discard pile are empty, gain 4 golds',
+  cost_range: [0, 2],
+  energy_range: [0, 1],
+  fn: function* (state: GameState) {
+    if (state.get('draw').size === 0 && state.get('discard').size === 0) {
+      state = yield* gain(state, [Gold, Gold, Gold, Gold]);
+    }
+    return state;
   }
 });
 
