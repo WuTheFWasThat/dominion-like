@@ -1066,18 +1066,6 @@ export const Boost: Event = register_kingdom_event({
   }
 });
 
-export const RunicPyramid: Event = register_kingdom_event({
-  name: 'Runic Pyramid',
-  description: 'Reboot doesn\'t discard your hand',
-  cost_range: [0, 5],
-  energy_range: [6, 12],
-  fn: function* (state: GameState, me: Event) {
-    let extra = state.get('extra');
-    state = state.set('extra', extra.set('reboot_discard', false));
-    return [state, me] as [GameState, Event];
-  }
-});
-
 export const WindFall: Event = register_kingdom_event({
   name: 'WindFall',
   description: 'If your draw and discard pile are empty, gain 4 golds',
@@ -1258,6 +1246,18 @@ export const PerpetualMotion: Situation = register_kingdom_situation_to_buy({
   }
 });
 
+
+export const RunicPyramid: Situation = register_kingdom_situation_to_buy({
+  name: 'Runic Pyramid',
+  description: 'Reboot doesn\'t discard your hand',
+  cost_range: [0, 5],
+  energy_range: [6, 12],
+  fn: function* (state: GameState) {
+    let extra = state.get('extra');
+    state = state.set('extra', extra.set('reboot_discard', false));
+    return state;
+  }
+});
 
 console.log(KINGDOM_CARDS);
 console.log(KINGDOM_EVENTS);

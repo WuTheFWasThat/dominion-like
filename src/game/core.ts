@@ -216,7 +216,7 @@ export function initial_state(seed: number | null): GameState {
     state = state.set('situations', state.get('situations').push(situation));
   });
 
-  const kingdom_situations_to_buy = random.sample(mt, Object.keys(cards.KINGDOM_SITUATIONS_TO_BUY), 1).map((k) => cards.KINGDOM_SITUATIONS_TO_BUY[k]);
+  const kingdom_situations_to_buy = random.sample(mt, Object.keys(cards.KINGDOM_SITUATIONS_TO_BUY), 2).map((k) => cards.KINGDOM_SITUATIONS_TO_BUY[k]);
   kingdom_situations_to_buy.forEach((situation) => {
     let cost_range = situation.get('cost_range') || [0, 0];
     let energy_range = situation.get('energy_range') || [5, 15];
