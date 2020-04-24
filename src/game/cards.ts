@@ -3,6 +3,7 @@ import Immutable from 'immutable';
 import {
   RawCard, RawSituation, RawEvent,
   make_card, make_situation, Card, Situation, make_event, Event,
+  getSupplyCard,
   GameState, Effect,
   draw, discard_from_hand, discard, trash_from_deck, trash, gain, gain_supply, scry, play
 } from  './core';
@@ -92,7 +93,7 @@ function register_kingdom_situation_to_buy(situation: RawSituation) {
 
 export const Copper: Card = make_card({
   name: 'Copper',
-  energy: 0,
+  energy: 1,
   extra: Immutable.Map({ value: 1 }), // used for coppersmith
   description: '+$1',
   fn: function* (state: GameState, me: Card) {
@@ -107,7 +108,7 @@ export const Copper: Card = make_card({
 
 export const Silver: Card = make_card({
   name: 'Silver',
-  energy: 0,
+  energy: 1,
   description: '+$2',
   fn: function* (state: GameState, me: Card) {
     state = state.set('money', state.get('money') + 2)
@@ -118,7 +119,7 @@ export const Silver: Card = make_card({
 
 export const Gold: Card = make_card({
   name: 'Gold',
-  energy: 0,
+  energy: 1,
   description: '+$3',
   fn: function* (state: GameState, me: Card) {
     state = state.set('money', state.get('money') + 3)
@@ -128,7 +129,7 @@ export const Gold: Card = make_card({
 
 export const Diamond: Card = make_card({
   name: 'Diamond',
-  energy: 0,
+  energy: 1,
   cost_range: [10, 10],
   description: '+$4',
   fn: function* (state: GameState, me: Card) {
@@ -140,7 +141,7 @@ export const Diamond: Card = make_card({
 
 export const Platinum: Card = make_card({
   name: 'Platinum',
-  energy: 0,
+  energy: 1,
   cost_range: [15, 15],
   description: '+$5',
   fn: function* (state: GameState, me: Card) {
@@ -340,6 +341,7 @@ export const Factory: Card = register_kingdom_card({
 export const Smithy: Card = register_kingdom_card({
   name: 'Smithy',
   energy: 1,
+  cost_range: [3, 6],
   description: '+3 cards',
   fn: function* (state: GameState, me: Card) {
     state = (yield* draw(state, 3)).state;
@@ -611,7 +613,7 @@ export const Library: Card = register_kingdom_card({
 
 export const FoolsGold: Card = register_kingdom_card({
   name: 'Fool\'s Gold',
-  energy: 0,
+  energy: 1,
   cost_range: [1, 2],
   description: '+$0, increase $ this card gives by 1',
   extra: Immutable.Map({ value: 0 }),
@@ -957,7 +959,7 @@ export const Favor: Event = register_kingdom_event({
 
 export const Inflation: Event = register_kingdom_event({
   name: 'Inflation',
-  energy_range: [0, 2],
+  energy_range: [0, 4],
   cost_range: [0, 0],
   description: 'Once per game, gain $20.  All cards cost $1 extra',
   // Crazy version:  'Gain $20.  All cards and events cost $1 extra', increases cost of itself and reboot..
@@ -1004,7 +1006,7 @@ export const Adrenaline: Event = register_kingdom_event({
 
 export const Philanthropy: Event = register_kingdom_event({
   name: 'Philanthropy',
-  energy_range: [1, 2],
+  energy_range: [1, 5],
   cost_range: [10, 30],
   description: 'Convert all your $ to victory points.',
   fn: function* (state: GameState, me: Event) {
@@ -1070,7 +1072,7 @@ export const WindFall: Event = register_kingdom_event({
   name: 'WindFall',
   description: 'If your draw and discard pile are empty, gain 4 golds',
   cost_range: [0, 2],
-  energy_range: [0, 1],
+  energy_range: [0, 2],
   fn: function* (state: GameState, me: Event) {
     if (state.get('draw').size === 0 && state.get('discard').size === 0) {
       state = yield* gain(state, [Gold, Gold, Gold, Gold]);
@@ -1232,7 +1234,7 @@ export const JunkYard: Situation = register_kingdom_situation_to_buy({
 
 export const PerpetualMotion: Situation = register_kingdom_situation_to_buy({
   name: 'Perpetual Motion',
-  energy_range: [2, 5],
+  energy_range: [4, 5],
   description: 'If your hand is empty, draw 1 card',
   fn: function* (state: GameState) {
     function* hook(state: GameState) {
@@ -1255,6 +1257,24 @@ export const RunicPyramid: Situation = register_kingdom_situation_to_buy({
   fn: function* (state: GameState) {
     let extra = state.get('extra');
     state = state.set('extra', extra.set('reboot_discard', false));
+    return state;
+  }
+});
+
+export const SilverMine: Situation = register_kingdom_situation_to_buy({
+  name: 'Silver Mine',
+  description: 'New silvers take 0 energy to play',
+  cost_range: [0, 10],
+  energy_range: [5, 20],
+  fn: function* (state: GameState) {
+    let result = getSupplyCard(state, Silver.get('name'));
+    let supply_card = result.supplyCard;
+    if (supply_card === null) {
+      state = state.set('log', state.get('log').push('Silver not in supply!'));
+      return state;
+    }
+    supply_card = supply_card.set('card', supply_card.get('card').set('energy', 0));
+    state = state.set('supply', state.get('supply').set(result.index, supply_card));
     return state;
   }
 });

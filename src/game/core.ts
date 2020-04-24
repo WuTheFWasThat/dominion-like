@@ -141,11 +141,11 @@ export function initial_state(seed: number | null): GameState {
     })(),
     Immutable.Record({
       card: cards.Silver,
-      cost: 3,
+      cost: 2,
     })(),
     Immutable.Record({
       card: cards.Gold,
-      cost: 6,
+      cost: 4,
     })(),
     Immutable.Record({
       card: cards.Estate,
@@ -157,7 +157,7 @@ export function initial_state(seed: number | null): GameState {
     })(),
     Immutable.Record({
       card: cards.Province,
-      cost: 6,
+      cost: 9,
     })(),
     Immutable.Record({
       card: cards.Donkey,
